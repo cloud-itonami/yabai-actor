@@ -1,0 +1,18 @@
+;; yabai — kotoba EAVT: JP business-email phishing/collections-scam IOC, 2026-07
+;; Source: operator-received phishing email on j.kawasaki@gftd.co.jp (Microsoft 365,
+;; Graph API via `m365 outlook message get`), received 2026-07-08T12:42:00Z. First-hand
+;; observation → :sourcing :authoritative. TLP:CLEAR (public repo, unlimited disclosure).
+;;
+;; Lure: impersonates a Google Workspace billing/collections notice ("American Bureau of
+;; Collections" / "ABC-Amega") addressed to "Customer – GFTD JAPAN K.K.", claiming a
+;; past-due balance (14916.00) on the gftd.co.jp Google Workspace tenant and directing the
+;; recipient to sign in to the Admin console and pay, or click "report fraud" / "add a
+;; verified contact" links. Classic B2B invoice/collections social-engineering pattern
+;; (fear of account suspension) rather than a direct credential-harvest page. Sender domain
+;; is not Google-owned; mail relayed through a third-party ESP (SendGrid) whose tracking
+;; subdomain is per-customer and not itself scored here (shared infra, not attacker-owned).
+;;
+;; Vocab: 00-contracts/schemas/passive-dns-cti-ontology.kotoba.edn
+
+[{:indicator/id "ioc.dom.abc-amega-com" :indicator/type :domain :indicator/value "abc-amega.com" :indicator/category :phishing :indicator/tlp :clear :indicator/confidence 850 :indicator/status :confirmed :indicator/first-seen-at "2026-07-08" :indicator/last-seen-at "2026-07-08" :indicator/source "gftd-mail-phishing-2026h2" :indicator/sourcing :authoritative} ; Google Workspace 偽装の督促/請求詐欺 lure ドメイン ("ABC-Amega" collection agency 詐称)
+ {:indicator/id "ioc.email.google-account-support-noreply-abc-amega-com" :indicator/type :email :indicator/value "google.account.support.noreply@abc-amega.com" :indicator/category :phishing :indicator/tlp :clear :indicator/confidence 850 :indicator/status :confirmed :indicator/first-seen-at "2026-07-08" :indicator/last-seen-at "2026-07-08" :indicator/source "gftd-mail-phishing-2026h2" :indicator/sourcing :authoritative}] ; 送信元アドレス。件名 "Google Workspace AC, gftd.co.jp, Balance Due Reminder ABC File 3542316"、受信先 j.kawasaki@gftd.co.jp
