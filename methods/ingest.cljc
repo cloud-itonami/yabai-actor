@@ -200,6 +200,81 @@
    (let [[domains certs _seen] (parse-crtsh text sourcing)]
      [(vec (vals domains)) certs])))
 
+;; ── Cloudflare zone HTTP-scanner bridge (ADR-2607170800) ────────────────────
+;; Turns per-request Cloudflare zone observations into :indicator/* :scanner IOCs.
+;; The kotoba estate serves NO WordPress/Joomla/PHP/.env/.git, so any request to
+;; those paths on an operator-owned zone is unambiguous hostile reconnaissance
+;; (honeypot posture — the catch-all 200 keeps scanners engaged; yabai only SCORES,
+;; never blocks). This is the single source of truth for the detection heuristic that
+;; the live sweep (cf_sweep.cljc, G7-gated) and any offline replay both consume.
+
+(def scanner-probe-re
+  "A path that has no legitimate reason to be requested on a kotoba (SvelteKit/cljs) zone —
+  WordPress/Joomla surface, secrets files, framework consoles, known-RCE probes."
+  #"(?i)wp-|\.php\b|xmlrpc|\.env|/\.git|wlwmanifest|/admin|\.aws|\.docker|phpinfo|/shell|/config\.|backup|\.sql\b|jce|joomla|cgi-bin|filemanager|bypass|\.trash|/vendor/|/laravel|/telescope|/actuator|/owa/|/autodiscover|/boaform|/GponForm|/HNAP1|/manager/html|/solr/|/druid/|/geoserver|/webui|/remote/login|/\.vscode|/\.ssh|/id_rsa|/etc/passwd|\.bak\b|/setup-config|/adminer|/_profiler|/_shell|\.gitconfig|/php\.php|/pinfo|/info\.php")
+
+(defn probe-path?
+  "True when path is scanner reconnaissance (matches scanner-probe-re)."
+  [path]
+  (boolean (and path (re-find scanner-probe-re path))))
+
+(defn scanner-tier
+  "Confidence tier for a source IP by breadth (distinct zones) and volume (probe reqs).
+  → [confidence status]. >=4 zones or >=500 req = high/confirmed; >=2 zones or >=50 = mid/
+  confirmed; else weak/candidate."
+  [n-zones probe]
+  (cond
+    (or (>= n-zones 4) (>= probe 500)) [900 ":confirmed"]
+    (or (>= n-zones 2) (>= probe 50))  [820 ":confirmed"]
+    :else                               [700 ":candidate"]))
+
+(defn- ioc-ip-id [ip] (str "ioc.ip." (-> ip (str/replace "." "-") (str/replace ":" "-"))))
+
+(defn bridge-cf-scanners
+  "Aggregate normalized Cloudflare observations into :indicator/* :scanner IOC rows.
+  Each obs is a map {\"ip\" \"cc\" \"path\" \"count\" \"zone\" \"day\"} (string keys, JSON-shaped
+  like bridge-pdns). Only probe-path? observations contribute. Deterministic: rows sorted by
+  (zones desc, probe desc, ip asc); one row per source IP. sourcing defaults :authoritative
+  (first-hand on operator-owned zones)."
+  ([obs] (bridge-cf-scanners obs "kotoba-cf-zones" "authoritative"))
+  ([obs source sourcing]
+   (let [agg (reduce
+              (fn [m o]
+                (let [p (get o "path")]
+                  (if-not (probe-path? p)
+                    m
+                    (let [ip (get o "ip")
+                          c  (long (or (get o "count") 1))
+                          rec (or (get m ip)
+                                  {:cc (get o "cc") :probe 0 :zones #{} :days #{}})]
+                      (assoc m ip
+                             (-> rec
+                                 (update :probe + c)
+                                 (update :zones conj (get o "zone"))
+                                 (update :days conj (get o "day"))
+                                 (assoc :cc (or (:cc rec) (get o "cc")))))))))
+              {} obs)]
+     (->> agg
+          (map (fn [[ip r]]
+                 (let [nz (count (:zones r))
+                       [conf status] (scanner-tier nz (:probe r))
+                       days (sort (:days r))]
+                   {:ip ip :nz nz :probe (:probe r)
+                    :row (array-map
+                          ":indicator/id" (ioc-ip-id ip)
+                          ":indicator/type" ":ip"
+                          ":indicator/value" ip
+                          ":indicator/category" ":scanner"
+                          ":indicator/tlp" ":clear"
+                          ":indicator/confidence" conf
+                          ":indicator/status" status
+                          ":indicator/first-seen-at" (first days)
+                          ":indicator/last-seen-at" (last days)
+                          ":indicator/source" source
+                          ":indicator/sourcing" (str ":" sourcing))})))
+          (sort-by (juxt (comp - :nz) (comp - :probe) :ip))
+          (mapv :row)))))
+
 (def ^:private merge-id-keys
   [":domain/id" ":pdns/id" ":iphist/id" ":tlscert/id"
    ":indicator/id" ":access/id" ":btobs/id"])
@@ -223,3 +298,20 @@
             [(conj merged rec) (conj seen k)]))))
     [[] #{}]
     (concat seed-rows bridged))))
+
+(defn merge-many
+  "Dedup-merge many row-seqs by id, FIRST-seen wins (earlier seq = higher authority; pass seed
+  first). Generalizes merge-rows for the whole data/ IOC set so every curated file flows into the
+  graph analyze/autorun read (previously only merge-rows' single 'bridged' arg landed)."
+  [row-seqs]
+  (first
+   (reduce
+    (fn [[merged seen] rec]
+      (if-not (map? rec)
+        [merged seen]
+        (let [k (key-of rec)]
+          (if (or (nil? k) (contains? seen k))
+            [merged seen]
+            [(conj merged rec) (conj seen k)]))))
+    [[] #{}]
+    (apply concat row-seqs))))
