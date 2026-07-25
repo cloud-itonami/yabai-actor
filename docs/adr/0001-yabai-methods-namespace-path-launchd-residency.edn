@@ -1,0 +1,72 @@
+[{:db/id -1,
+  :adr/id "adr-0001-yabai-methods-namespace-path-launchd-residency",
+  :adr/title "ADR-0001: yabai.methods namespace/path conformance + autorun launchd residency (meisai pattern)",
+  :adr/status "accepted",
+  :adr/doc_type "adr",
+  :adr/date "2026-07-25",
+  :adr/deciders ["Jun Kawasaki (+ Claude)"],
+  :adr/topic "yabai-methods-namespace-path-launchd-residency",
+  :adr/related ["adr-2605301400-tadori-onchain-tracing-actor-and-kotoba-eavt-migration"
+                "adr-2606122400-meisai-launchd-residency"
+                "adr-2606160842-yabai-py-to-clj-port-wave"],
+  :adr/supersedes [],
+  :adr/superseded_by [],
+  :adr/repos ["etzhayyim/com-etzhayyim-yabai"],
+  :adr/authoritative true,
+  :adr/authoritative_for ["com-etzhayyim-yabai の methods/* 配下の namespace/path 配置、autorun の -main driver、および launchd plist による host-local 常駐"],
+  :adr/last_verified "2026-07-25",
+  :adr/body "# ADR-0001: yabai.methods namespace/path conformance + autorun launchd residency
+
+**Status**: accepted
+**Date**: 2026-07-25
+
+## Context
+
+com-etzhayyim-yabai は py→clj port wave (ADR-2606160842) で `methods/*.cljc` に Clojure
+実装を置いたが、namespace（`yabai.methods.autorun` 等）とファイルパス（`methods/autorun.cljc`）
+が不一致だった。Clojure/babashka は namespace `yabai.methods.autorun` を classpath 上の
+`yabai/methods/autorun.cljc` として解決するため、`bb -e '(require ...)'` が FileNotFoundError
+になり、**run_tests.sh も壊れていた**（fleet green-check に組み込まれているはずが動かなかった）。
+
+meisai はこの問題が無い — meisai は etzhayyim/root の `20-actors/meisai/methods/` にあり、
+namespace `meisai.methods.*` とパスが一致するから `-cp 20-actors` で解決する。com-etzhayyim-yabai
+は独立 repo で `methods/` 直下の構造のため、同じやり方が通用しなかった。
+
+## Decision
+
+### 1. namespace/path conformance（構造修正）
+`methods/*.cljc` を `src/yabai/methods/` へ、`methods/test_*.cljc` を `test/yabai/methods/` へ
+git mv（履歴保持）。namespace は `yabai.methods.*` のまま（既に正しい）。deps.edn の
+`:paths [\"src\"]` で src/ が classpath 基点になり、`bb -cp src` で namespace が解決する。
+`yabai_edn.cljc`（namespace `yabai.methods.yabai-edn`）など、namespace の `-` はファイル名の
+`_` に対応する（Clojure 慣習）。
+
+ファイルパスを `*file*` から解決していた箇所（`here`/`data`/`methods-dir`）は、新しい
+階層（src/yabai/methods/）に合わせて親ディレクトリの depth を修正。autorun.cljc の `data` は
+repo-root（src/yabai/methods → src/yabai → src → root の3階層上）に固定。
+
+### 2. autorun -main driver
+`run-autonomous`（& {:keys [cycles graph-path log-path]}）を呼ぶ thin CLI driver を
+`#?(:clj)` で追加。`--cycles N`（default 1）/ `--graph PATH` / `--log PATH` / `--fresh`。
+`:log-path` が未指定（nil）の時は `log-default` にフォールバック（Clojure の `:or` は
+key 不在時のみ発動し、nil 明示渡しでは発動しないため、明示 `(or log-path log-default)`）。
+
+### 3. launchd plist（meisai pattern, ADR-2606122400 系）
+`launchd/com.etzhayyim.yabai.cti.heartbeat.plist` を追加。`bb -cp src -e` で
+`yabai.methods.autorun/-main --cycles 1` を呼ぶ。StartInterval=3600（毎時）、RunAtLoad=true。
+autorun は **NO live network I/O**（G7 gated）で LOCAL kotoba Datom log に書く host-local
+ループなので、共有 fleet cell でなく LaunchAgent が正しい residence（meisai と同じ根拠）。
+
+### 4. run_tests.sh 修正
+`cd \"$(dirname \"$0\")\"` で repo root に留まり、`bb -cp src:test` で classpath 明示。
+
+## Consequences
+
+- run_tests.sh が復旧（7 tests / 5489 assertions / 0 failures / 0 errors）。
+- `-main --cycles 1` が動作: 4 domains / 4 pdns / 531 iocs / access_encrypted 1-1
+  （G6/G10 hard-stop 効作、plaintext_violations 0）/ 5467 datoms persist / commit-DAG ok。
+- launchd plist で autorun が毎時 sweep する host-local 常駐（offline fold のみ。G7 gate
+  の向こう側の live 取得は 別ステップ）。
+- py→clj port wave の完成形（namespace/path conformance）。fleet green-check に
+  run_tests.sh が本当に wire される。
+"}]

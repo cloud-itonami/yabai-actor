@@ -25,7 +25,9 @@
 #?(:clj
    (def ^:private here (-> *file* clojure.java.io/file .getParentFile)))
 #?(:clj
-   (def ^:private data (clojure.java.io/file (.getParentFile here) "data")))
+   (def ^:private repo-root (.. here getParentFile getParentFile getParentFile)))
+#?(:clj
+   (def ^:private data (clojure.java.io/file repo-root "data")))
 #?(:clj
    (def merged (clojure.java.io/file data "passive-dns.merged.kotoba.edn")))
 #?(:clj
@@ -75,3 +77,23 @@
         "log_length" (count (kotoba/read-log log-path))
         "head_cid" (kotoba/head-cid log-path)
         "chain" (kotoba/verify-chain log-path)})))
+
+#?(:clj
+   (defn -main
+     "Thin CLI driver over run-autonomous for launchd residency (meisai pattern,
+     ADR-2606122400 系). --cycles N (default 1) / --graph PATH / --log PATH / --fresh
+     (truncate log first). Prints run summary + head CID; exits (NOT a long-running loop,
+     so KeepAlive would be wrong — launchd StartInterval re-sweeps hourly)."
+     [& args]
+     (let [argmap (apply hash-map args)
+           cycles (some-> (get argmap "--cycles") Integer/parseInt)
+           graph-path (get argmap "--graph")
+           log-path (get argmap "--log")
+           fresh? (get argmap "--fresh")]
+       (when (and log-path fresh?)
+         (spit log-path ""))
+       (let [result (run-autonomous :cycles (or cycles 1)
+                                    :graph-path graph-path
+                                    :log-path (or log-path log-default))]
+         (println (pr-str result))
+         (shutdown-agents)))))
