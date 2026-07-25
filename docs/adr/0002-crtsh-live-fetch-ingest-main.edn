@@ -1,0 +1,82 @@
+[{:db/id -1,
+  :adr/id "adr-0002-crtsh-live-fetch-ingest-main",
+  :adr/title "ADR-0002: ingest.cljc に crt.sh live fetch と -main driver を追加（public CT logs・token 不要・G7 gate）",
+  :adr/status "accepted",
+  :adr/doc_type "adr",
+  :adr/date "2026-07-25",
+  :adr/deciders ["Jun Kawasaki (+ Claude)"],
+  :adr/topic "crtsh-live-fetch-ingest-main",
+  :adr/related ["adr-0001-yabai-methods-namespace-path-launchd-residency"
+                "adr-2605301400-tadori-onchain-tracing-actor-and-kotoba-eavt-migration"
+                "adr-2607170800-cf-zone-scanner-bridge"],
+  :adr/supersedes [],
+  :adr/superseded_by [],
+  :adr/repos ["etzhayyim/com-etzhayyim-yabai"],
+  :adr/authoritative true,
+  :adr/authoritative_for ["ingest.cljc の -main / fetch-crtsh（live crt.sh pull の実行経路）と G7 gate（--live）の正本"],
+  :adr/last_verified "2026-07-25",
+  :adr/body "# ADR-0002: crt.sh live fetch + ingest -main driver
+
+**Status**: accepted
+**Date**: 2026-07-25
+
+## Context
+
+ingest.cljc の py→clj port (ADR-2606160842) は parse/bridge 関数群（parse-crtsh,
+bridge-pdns, bridge-cf-scanners, merge-many）を移植したが、**Python の `__main__` CLI
+driver + live crt.sh fetch (urllib) は意図的に省略**されていた（namespace コメントに明記）。
+そのため live 取得の実行経路が無く、Phase 3「本番」を回せなかった。
+
+本番データソースは public/free 主系（owner decision）。crt.sh（Certificate Transparency
+logs）は public・token 不要で、SecurityTrails/DNSDB 等の有料 feed は schema 上
+`:feature-flagged-input` 限定（非 SoR）。
+
+## Decision
+
+### 1. fetch-crtsh + -main driver
+`fetch-crtsh [domain]` は `(slurp (str/replace crtsh \"{q}\" domain))` で crt.sh JSON を取得
+（bb の slurp が https をサポート、HTTP client 不要）。`-main` は G7-gated CLI driver:
+`--source ct --domain <fqdn> --live`。**offline-default**: `--live` 無しで REFUSED + exit 1。
+`--live` は boolean flag（`some #{\"--live\"} argv`、cf_sweep と同型 — hash-map は奇数個で
+エラーになるため値付きでなく存在判定）。
+
+### 2. data/*.kotoba.edn への書き出し
+parse-crtsh-result → [domains certs] → `(edn/to-edn rows header)` で
+`data/<slug(domain)>-ct.kotoba.edn` に書き出し。このファイルは cf_sweep/rebuild-merged! が
+`data/*.kotoba.edn`（seed/merged/yabai.datoms 以外）として自動 fold する。次の autorun
+cycle で merged → kotoba Datom log に persist → query 面（com-junkawasaki/root#1273 の
+yabai-passive-dns loader）から引ける。
+
+### 3. cf_sweep data-dir 修正（Phase 2 の漏れ）
+ADR-0001 の methods/ → src/yabai/methods/ 移動で cf_sweep.cljc の `data-dir`（`*file*` の
+2階層上）が更新漏れ（旧 methods/ 構造向け）。src/yabai/methods/ → root は3階層上に修正。
+test_autorun が cf_sweep の data-dir を使わないため Phase 2 のテストが緑でも気付かなかった。
+
+### 4. G7 gate
+crt.sh は public だが、active collection は GATE-G7（`--live`）で offline-default。
+YABAI_OPERATOR_GATE env でなく `--live` flag で gate（cf_sweep と同型）。
+
+## Verified
+
+```
+bb -cp src -e \"(require 'yabai.methods.ingest)(apply -main [--source ct --domain etzhayyim.com --live])\"
+→ {:source \"ct\", :domain \"etzhayyim.com\", :domains 5, :certs 28,
+   :written \"etzhayyim-com-ct.kotoba.edn\"}
+```
+
+`rebuild-merged!` が `data/etzhayyim-com-ct.kotoba.edn` を fold → merged に etzhayyim 27件
+追加（5 domains + 28 certs の dedup 後）。G7 gate: `--live` 無しで REFUSED + exit 1 確認。
+
+crt.sh は一時 502 を返す頻度が高い（CT log query が重い）。retry は呼び出し側の責務
+（launchd の StartInterval で毎時再試行、または wrapper で retry）。本 ADR では retry を
+組み込まず、502 は次 cycle で自然回復する設計。
+
+## Consequences
+
+- Phase 3「本番」の実行経路が public 主系（crt.sh）で開通。token 不要。
+-取得した CT 観測が data/*.kotoba.edn → merged → kotoba log → query 面 と流れる。
+- cf_sweep.cljc の data-dir も修正され、cf_sweep --live（CF scanner）も新構造で動く
+（CF_API_TOKEN は別途 skill secrets-location-map で特定、owner 実行）。
+- 有料 feed（SecurityTrails 等）は :feature-flagged-input で別 bridge を足す余地を残す
+（parse-crtsh と同型の parse-vendor を追加すればよい）。
+"}]

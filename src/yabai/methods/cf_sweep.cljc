@@ -105,9 +105,11 @@
        (loop [d f, acc []]
          (if (.isAfter d t) acc (recur (.plusDays d 1) (conj acc (str d))))))))
 
-;; data/ dir resolved at load time (bb sets *file*), mirroring autorun's `here`/`data`.
+;; data/ dir resolved at load time (bb sets *file*). src/yabai/methods/ -> root is 3 levels up.
 #?(:clj (def ^:private data-dir
-          (clojure.java.io/file (.getParentFile (.getParentFile (clojure.java.io/file *file*))) "data")))
+          (let [here (-> *file* clojure.java.io/file .getParentFile)
+                repo-root (.. here getParentFile getParentFile getParentFile)]
+            (clojure.java.io/file repo-root "data"))))
 
 #?(:clj
    (defn rebuild-merged!
