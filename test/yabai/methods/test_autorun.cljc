@@ -16,7 +16,8 @@
 
 ;; capture the source dir at LOAD time (*file* is absolute then; NO_SOURCE_PATH at run time).
 #?(:clj
-   (def ^:private methods-dir (-> *file* io/file .getParentFile)))
+   (def ^:private methods-dir (-> *file* io/file .getParentFile .getParentFile .getParentFile .getParentFile
+                                  (io/file "src" "yabai" "methods"))))
 
 #?(:clj
    (defn- tmp-log []

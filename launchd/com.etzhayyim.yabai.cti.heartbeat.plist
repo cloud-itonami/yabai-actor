@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.etzhayyim.yabai.cti.heartbeat — makes yabai CTI autorun RESIDENT on the host.
+  meisai pattern (ADR-2606122400 系).
+
+  Runs `yabai.methods.autorun/-main --cycles 1`: observes the OFFLINE merged CTI graph
+  (data/passive-dns.merged.kotoba.edn), G6/G10 guard (assert every :access/* record is
+  encrypted — hard-stop on plaintext PII), analyzes (fast-flux / hosting concentration /
+  IOC load / IP-movement / cert pivots), persists one content-addressed transaction to the
+  LOCAL append-only kotoba Datom log (data/yabai.datoms.kotoba.edn), then verifies the
+  commit-DAG.
+
+  WHY launchd, NOT a shared murakumo fleet cell (50-infra/cluster/murakumo/cell-runner/cells.edn):
+    autorun does NO live network I/O (G7 gated) and writes to the LOCAL kotoba log. The fleet
+    cells run on SHARED nodes; the offline-fold heartbeat is a host-local loop. This plist is OS
+    config; the loop logic lives in clj/bb over Datoms (repo-wide rule). The G7-gated live
+    CT/PDNS pull (ingest.cljc --live) and the live-node push (transact.cljc) stay separate
+    operator-gated steps — NOT this heartbeat.
+
+  StartInterval=3600 → re-sweep hourly (autorun exits after the sweep; this is NOT a
+                       long-running loop, so KeepAlive would be wrong — it would respawn
+                       continuously).
+  RunAtLoad=true     → also sweep at login.
+
+  Install (operator step — not Claude; writes to ~/Library):
+    cd <com-etzhayyim-yabai repo>
+    cp launchd/com.etzhayyim.yabai.cti.heartbeat.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.etzhayyim.yabai.cti.heartbeat.plist
+    launchctl enable  gui/$(id -u)/com.etzhayyim.yabai.cti.heartbeat
+  Stop / uninstall:
+    launchctl bootout gui/$(id -u)/com.etzhayyim.yabai.cti.heartbeat
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.etzhayyim.yabai.cti.heartbeat</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/bb</string>
+    <string>-cp</string>
+    <string>src</string>
+    <string>-e</string>
+    <string>(require 'yabai.methods.autorun)(apply yabai.methods.autorun/-main ["--cycles" "1"])</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StartInterval</key>
+  <integer>3600</integer>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <!-- logs land under the gitignored data/ (the sweep prints only tx counts + head CID). -->
+  <key>StandardOutPath</key>
+  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai/data/heartbeat.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai/data/heartbeat.err.log</string>
+</dict>
+</plist>
