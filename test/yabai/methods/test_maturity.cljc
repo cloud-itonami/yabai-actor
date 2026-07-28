@@ -25,7 +25,8 @@
   (let [d (m/dimensions graph state)]
     (is (= (/ (double (count phish/default-brands)) (double (:brands m/targets)))
            (:brand-coverage d)))
-    (is (= (/ 2.0 6.0) (:log-coverage d)) "two cursors of six known shards")
+    (is (= (/ 2.0 (double (:logs m/targets))) (:log-coverage d))
+        "two cursors, measured against the target rather than a hardcoded shard count")
     (is (= (/ 2.0 2000.0) (:observation-volume d)))
     (is (= (/ 2.0 60.0) (:infra-breadth d)) "distinct :iphist/asn, not row count")
     (is (= 0.5 (:signal-independence d))

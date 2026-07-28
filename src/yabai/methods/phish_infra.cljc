@@ -80,22 +80,22 @@
         [;; ── observed in this repo's own corpora ──────────────────────────────
          {:brand "mastercard" :seen :corpus :home #{"mastercard.com" "mastercard.us" "mastercard.co.jp"}}
          {:brand "whatsapp"   :seen :corpus :home #{"whatsapp.com" "whatsapp.net" "wa.me"}}
-         {:brand "apple"      :seen :corpus :home #{"apple.com" "apple.co.jp" "applecard.apple"}}
-         {:brand "icloud"     :seen :corpus :home #{"icloud.com" "icloud.com.cn"}}
-         {:brand "line"       :seen :corpus :home #{"line.me" "linecorp.com" "line-apps.com" "lycorp.co.jp"}}
+         {:brand "apple"      :seen :corpus :home #{"apple.com" "apple.co.jp" "applecard.apple" "apple-dns.net" "cdn-apple.com" "applemusic.com"}}
+         {:brand "icloud"     :seen :corpus :home #{"icloud.com" "icloud.com.cn" "icloud-content.com" "icloud.apple.com"}}
+         {:brand "line"       :seen :corpus :home #{"line.me" "linecorp.com" "line-apps.com" "lycorp.co.jp" "line-scdn.net" "line-cdn.net"}}
          {:brand "smbc"       :seen :corpus :home #{"smbc.co.jp" "smbc-card.com" "smbctb.co.jp"}}
-         {:brand "rakuten"    :seen :corpus :home #{"rakuten.co.jp" "rakuten.com" "rakuten-card.co.jp"}}
-         {:brand "google"     :seen :corpus :home #{"google.com" "google.co.jp" "googlemail.com" "workspace.google.com"}}
+         {:brand "rakuten"    :seen :corpus :home #{"rakuten.co.jp" "rakuten.com" "rakuten-card.co.jp" "rakuten.jp" "r10s.jp"}}
+         {:brand "google"     :seen :corpus :home #{"google.com" "google.co.jp" "googlemail.com" "workspace.google.com" "googleapis.com" "gstatic.com" "googleusercontent.com" "goo.gl" "withgoogle.com"}}
          ;; ── coverage: known phishing targets, not yet observed here ──────────
-         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp"}}
-         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com"}}
-         {:brand "paypal"     :seen :target :home #{"paypal.com" "paypal.co.jp" "paypal.me"}}
-         {:brand "netflix"    :seen :target :home #{"netflix.com" "netflix.co.jp"}}
-         {:brand "instagram"  :seen :target :home #{"instagram.com"}}
-         {:brand "facebook"   :seen :target :home #{"facebook.com" "fb.com"}}
-         {:brand "telegram"   :seen :target :home #{"telegram.org" "telegram.me" "t.me"}}
-         {:brand "coinbase"   :seen :target :home #{"coinbase.com"}}
-         {:brand "binance"    :seen :target :home #{"binance.com" "binance.us"}}
+         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp" "amazonaws.com" "awsstatic.com" "aws.amazon.com" "amazon.dev"}}
+         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com" "microsoftonline.com" "azure.com" "azure.net" "windows.net" "office.com" "sharepoint.com" "azureedge.net"}}
+         {:brand "paypal"     :seen :target :home #{"paypal.com" "paypal.co.jp" "paypal.me" "paypalobjects.com"}}
+         {:brand "netflix"    :seen :target :home #{"netflix.com" "netflix.co.jp" "nflxvideo.net" "nflximg.net" "nflxext.com"}}
+         {:brand "instagram"  :seen :target :home #{"instagram.com" "cdninstagram.com"}}
+         {:brand "facebook"   :seen :target :home #{"facebook.com" "fb.com" "fbcdn.net" "facebook.net"}}
+         {:brand "telegram"   :seen :target :home #{"telegram.org" "telegram.me" "t.me" "telegram.dog" "telesco.pe"}}
+         {:brand "coinbase"   :seen :target :home #{"coinbase.com" "coinbase.net"}}
+         {:brand "binance"    :seen :target :home #{"binance.com" "binance.us" "binance.org"}}
          {:brand "mizuho"     :seen :target :home #{"mizuhobank.co.jp" "mizuho-fg.co.jp"}}
          {:brand "mufg"       :seen :target :home #{"mufg.jp" "bk.mufg.jp" "mufg.com"}}
          {:brand "docomo"     :seen :target :home #{"docomo.ne.jp" "nttdocomo.co.jp" "docomo.co.jp"}}
@@ -218,7 +218,14 @@
    (let [fq (str/lower-case (str/trim (str fqdn)))
          label (normalize-label (registrable-label fq))
          ;; a home domain of ANY brand is out of scope entirely — never report the victim
-         home? (some (fn [b] (contains? (or (:home b) #{}) fq)) brands)]
+         ;; Match home on the REGISTRABLE DOMAIN, not the exact fqdn. A brand's own
+         ;; infrastructure lives on subdomains: measured 2026-07-28, one 300-entry slice of
+         ;; a 2027 CT shard yielded 447 candidates of which 409 were `*.amazonaws.com` VPC
+         ;; endpoints and MSK brokers — Amazon's own certificates, admitted because
+         ;; `amazonaws` starts with `amazon` and exact-fqdn home matching could not see it.
+         ;; That is a 38% prefilter admission rate on names that can never become a claim.
+         rd (registrable-domain fq)
+         home? (some (fn [b] (let [h (or (:home b) #{})] (or (h fq) (h rd)))) brands)]
      (->> (if home? [] brands)
           (keep (fn [{:keys [brand max-edits]}]
                   (let [d (osa-distance label brand)]

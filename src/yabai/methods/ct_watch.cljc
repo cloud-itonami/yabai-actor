@@ -289,9 +289,17 @@
            ;; STRONGER over time as more domains accumulate on the same address, and (c) the git
            ;; history of this one file is the growth log (the toshokan pattern).
            out-file (clojure.java.io/file data-dir "ingest" (str "ct-watch-" log ".json"))
-           prior (if (.exists out-file)
-                   (or (ingest/parse-json (slurp out-file)) [])
-                   [])
+           ;; Re-apply the prefilter to what is already on disk. The roster changes over
+           ;; time — adding a brand's own infrastructure to :home retroactively exempts
+           ;; observations that were admitted before. Leaving them would inflate
+           ;; observation-volume (a maturity dimension) with names that can never become a
+           ;; claim, which is gaming the metric with junk. Measured 2026-07-28: 921 of the
+           ;; accumulated CT observations were `*.amazonaws.com` and friends.
+           prior (->> (if (.exists out-file)
+                        (or (ingest/parse-json (slurp out-file)) [])
+                        [])
+                      (filter #(some? (phish/lexical-hit (get % "domain"))))
+                      vec)
            ;; earlier observation wins, so :indicator/first-seen-at never moves forward
            folded (->> (concat prior obs)
                        (reduce (fn [m o] (if (contains? m (get o "domain")) m
@@ -404,7 +412,21 @@
            opt (fn [f] (let [i (.indexOf argv f)] (when (>= i 0) (get argv (inc i)))))
            live? (some #{"--live"} argv)
            log (or (opt "--log") default-log)
-           entries (Long/parseLong (or (opt "--entries") "2000"))]
+           ;; `--log all` or a comma list tails several shards in ONE tick, splitting the
+           ;; entry budget between them. Rotating one shard per tick would sample each only
+           ;; every Nth hour; splitting keeps every cursor moving on every tick for the same
+           ;; total work, and log-coverage is a maturity dimension precisely because one
+           ;; shard is not a view of worldwide issuance (measured 2026-07-28: argon2026h2
+           ;; 2.21e9 entries, but nimbus2026 alone holds 5.68e9 more).
+           logs (cond
+                  (= "all" log) (vec (sort (keys ct-logs)))
+                  (str/includes? log ",") (vec (str/split log #","))
+                  :else [log])
+           _ (doseq [l logs]
+               (when-not (ct-logs l)
+                 (throw (ex-info "unknown CT log" {:log l :known (sort (keys ct-logs))}))))
+           entries (Long/parseLong (or (opt "--entries") "2000"))
+           per-log (max 1 (quot entries (count logs)))]
        (cond
          (opt "--plan")
          (let [n (Long/parseLong (opt "--plan"))
@@ -428,24 +450,47 @@
              (System/exit 1))
 
          :else
-         (let [r (tick! :log log :entries entries
-                        :start (some-> (opt "--start") Long/parseLong))]
-           (println (pr-str (dissoc r :candidate-names)))
-           (when (seq (:candidate-names r))
-             (println (str "candidates: " (str/join " " (:candidate-names r)))))
-           ;; Score the CUMULATIVE file, not just this tick's additions: co-hosting is a
-           ;; property of the whole observation set, so a domain seen days ago can be
+         (let [results
+               (doall
+                (for [l logs]
+                  ;; One shard failing must not lose the shards that already succeeded —
+                  ;; CT logs return 5xx often enough that an all-or-nothing tick would
+                  ;; frequently record nothing at all.
+                  (try
+                    (let [r (tick! :log l :entries per-log
+                                   :start (when (= 1 (count logs))
+                                            (some-> (opt "--start") Long/parseLong)))]
+                      (println (pr-str (dissoc r :candidate-names)))
+                      (when (seq (:candidate-names r))
+                        (println (str "  candidates: " (str/join " " (:candidate-names r)))))
+                      r)
+                    (catch Exception e
+                      (binding [*out* *err*]
+                        (println (str "  shard " l " FAILED: " (.getMessage e))))
+                      {:log l :failed (.getMessage e)}))))
+               r (first results)]
+           ;; Score each shard's CUMULATIVE file, not just this tick's additions: co-hosting
+           ;; is a property of the whole observation set, so a domain seen days ago can be
            ;; corroborated by one seen now.
-           (when (and (some #{"--score"} argv) (:written r))
-             (let [in (clojure.java.io/file data-dir "ingest" (:written r))
-                   scored (phish/score-file! in (str "ct-watch-" log)
-                                             (str "yabai-ct-watch-" log))]
-               (println (pr-str (select-keys scored [:observations :confirmed :candidate
-                                                     :unscored :rows :written])))
-               (require 'yabai.methods.cf-sweep)
-               (println (pr-str ((resolve 'yabai.methods.cf-sweep/rebuild-merged!))))))
+           (when (some #{"--score"} argv)
+             (doseq [{:keys [log written]} (filter :written results)]
+               (let [in (clojure.java.io/file data-dir "ingest" written)
+                     scored (phish/score-file! in (str "ct-watch-" log)
+                                               (str "yabai-ct-watch-" log))]
+                 (println (pr-str (assoc (select-keys scored [:observations :confirmed
+                                                              :candidate :unscored :rows])
+                                         :log log)))))
+             (require 'yabai.methods.cf-sweep)
+             (println (pr-str ((resolve 'yabai.methods.cf-sweep/rebuild-merged!)))))
            (when (some #{"--commit"} argv)
-             (let [g (commit-and-push! r)]
+             (let [ok (filter :written results)
+                   g (commit-and-push!
+                      {:log (str/join "+" (map :log ok))
+                       :from (apply min (conj (keep :from ok) 0))
+                       :to (apply max (conj (keep :to ok) 0))
+                       :candidates (reduce + 0 (keep :candidates ok))
+                       :fresh (reduce + 0 (keep :fresh ok))
+                       :cumulative (reduce + 0 (keep :cumulative ok))})]
                (println (pr-str g))
                (when (and (:committed g) (not (:pushed g)))
                  (println "push FAILED — the tick's findings are committed locally only.")

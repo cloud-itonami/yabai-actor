@@ -65,7 +65,16 @@
    "icloud.com" "google.co.jp" "amazon.com" "microsoft.com" "outlook.com" "paypal.com"
    "netflix.com" "instagram.com" "facebook.com" "fb.com" "telegram.org" "t.me"
    "coinbase.com" "binance.com" "mizuhobank.co.jp" "mufg.jp" "docomo.ne.jp"
-   "softbank.jp" "paypay.ne.jp" "mercari.com" "saisoncard.co.jp" "sagawa-exp.co.jp"])
+   "softbank.jp" "paypay.ne.jp" "mercari.com" "saisoncard.co.jp" "sagawa-exp.co.jp"
+   ;; A brand's own INFRASTRUCTURE, on subdomains. Measured 2026-07-28: one 300-entry slice
+   ;; of a 2027 CT shard produced 447 candidates, 409 of them `*.amazonaws.com` VPC
+   ;; endpoints and MSK brokers, because `amazonaws` starts with `amazon` and home matching
+   ;; compared exact FQDNs. These probe that home now resolves on the registrable domain.
+   "bucket.vpce-0f92515731b3b8c6f-z8xiemy0.s3.ap-northeast-1.vpce.amazonaws.com"
+   "tls.canary82eb823279d0.c9zy2z.c3.kafka.af-south-1.amazonaws.com"
+   "s3-accesspoint.dualstack.us-gov-east-1.amazonaws.com"
+   "login.microsoftonline.com" "x.blob.core.windows.net" "fonts.gstatic.com"
+   "scontent.fbcdn.net" "www.paypalobjects.com" "occ-0-1.nflxvideo.net"])
 
 (def impersonation-floor
   "Unambiguous brand impersonations that must be caught with NO infra corroboration."
@@ -95,7 +104,11 @@
   ;; 1.0, which is the metric saying the target stopped being informative. A target nobody
   ;; can move is the same as no metric — and so is one already met.
   {:brands 50          ; a roster that covers the brands actually impersonated in JP/global phishing
-   :logs 6             ; every shard in ct-watch/ct-logs being tailed, not just one
+   ;; Raised 6 -> 12 on 2026-07-28 for the same reason as :brands — all six configured
+   ;; shards are now tailed and the dimension pinned at 1.0. The public log list carries
+   ;; more operators (DigiCert Wyvern/Sphinx, Sectigo, Let's Encrypt Oak, TrustAsia); the
+   ;; headroom is what makes adding them worth an agent's time.
+   :logs 12            ; shards actually tailed, across operators — not just Google+Cloudflare
    :observations 2000  ; enough distinct observed domains for co-hosting to have teeth
    :asns 60})          ; infra breadth — one hosting cluster is not a picture of the world
 

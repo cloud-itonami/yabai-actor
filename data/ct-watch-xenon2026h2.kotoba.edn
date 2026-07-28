@@ -1,0 +1,14 @@
+;; yabai — CT-log worldwide observations (xenon2026h2). GENERATED — DO NOT EDIT BY HAND.
+[
+ {:domain/id "domain.education-line-pages-dev" :domain/fqdn "education-line.pages.dev" :domain/tld "dev" :domain/sourcing :authoritative}
+ {:domain/id "domain.goldexpress-online-azlegalservice-com" :domain/fqdn "goldexpress.online.azlegalservice.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.onlinematched1754666459-zendesk-com" :domain/fqdn "onlinematched1754666459.zendesk.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.www-goldexpress-online-azlegalservice-com" :domain/fqdn "www.goldexpress.online.azlegalservice.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:pdns/id "pdns.education-line-pages-dev.a" :pdns/domain "domain.education-line-pages-dev" :pdns/rrtype :a :pdns/rrdata ["172.66.44.133"] :pdns/ip "ip.v4.172-66-44-133" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.goldexpress-online-azlegalservice-com.a" :pdns/domain "domain.goldexpress-online-azlegalservice-com" :pdns/rrtype :a :pdns/rrdata ["131.153.147.186"] :pdns/ip "ip.v4.131-153-147-186" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.onlinematched1754666459-zendesk-com.a" :pdns/domain "domain.onlinematched1754666459-zendesk-com" :pdns/rrtype :a :pdns/rrdata ["216.198.53.12"] :pdns/ip "ip.v4.216-198-53-12" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.www-goldexpress-online-azlegalservice-com.a" :pdns/domain "domain.www-goldexpress-online-azlegalservice-com" :pdns/rrtype :a :pdns/rrdata ["131.153.147.186"] :pdns/ip "ip.v4.131-153-147-186" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:iphist/id "iphist.172-66-44-133.2026-07-28" :iphist/ip "ip.v4.172-66-44-133" :iphist/asn "asn.13335" :iphist/provider "CLOUDFLARENET - Cloudflare, Inc., US" :iphist/provider-type :unknown :iphist/country "US" :iphist/observed-at "2026-07-28" :iphist/sourcing :authoritative}
+ {:iphist/id "iphist.131-153-147-186.2026-07-28" :iphist/ip "ip.v4.131-153-147-186" :iphist/asn "asn.19437" :iphist/provider "SS-ASH - SECURED SERVERS LLC, US" :iphist/provider-type :unknown :iphist/country "US" :iphist/observed-at "2026-07-28" :iphist/sourcing :authoritative}
+ {:iphist/id "iphist.216-198-53-12.2026-07-28" :iphist/ip "ip.v4.216-198-53-12" :iphist/asn "asn.209242" :iphist/provider "CLOUDFLARESPECTRUM - Cloudflare London, LLC, US" :iphist/provider-type :unknown :iphist/country "US" :iphist/observed-at "2026-07-28" :iphist/sourcing :authoritative}
+]
