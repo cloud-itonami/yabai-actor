@@ -12,7 +12,7 @@
                 "adr-2607132300-design-quality-score"],
   :adr/supersedes [],
   :adr/superseded_by [],
-  :adr/repos ["etzhayyim/com-etzhayyim-yabai" "kotoba-lang/tamaki"],
+  :adr/repos ["etzhayyim/com-etzhayyim-yabai" "etzhayyim/tamaki"],
   :adr/authoritative true,
   :adr/authoritative_for ["phishing watch の成熟度指標の定義（floors + 5 dimensions + weights + targets）とその anti-gaming 性質"
                           "自律ループが最適化してよい数値がこの score であること"

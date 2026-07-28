@@ -53,7 +53,7 @@
     <key>YABAI_ROOT</key>
     <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai</string>
     <key>TAMAKI_BIN</key>
-    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/kotoba-lang/tamaki/bin/tamaki</string>
+    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/tamaki/bin/tamaki</string>
     <key>TAMAKI_STATE_DIR</key>
     <string>/Users/junkawasaki/.tamaki</string>
     <key>TAMAKI_WORKER_ID</key>
