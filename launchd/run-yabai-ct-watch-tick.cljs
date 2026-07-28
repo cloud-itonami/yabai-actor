@@ -29,7 +29,7 @@
 
 (def tamaki
   (or (env "TAMAKI_BIN")
-      "/Users/junkawasaki/github/com-junkawasaki/orgs/kotoba-lang/tamaki/bin/tamaki"))
+      "/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/tamaki/bin/tamaki"))
 
 ;; Entries per tick. ~2000 CT entries ≈ 3000 SAN names ≈ 45-60s wall clock, of which the
 ;; network share is get-entries plus a DNS lookup for the handful that survive the pure
@@ -38,13 +38,20 @@
 (def entries (or (env "YABAI_CT_ENTRIES") "2000"))
 (def ct-log (or (env "YABAI_CT_LOG") "all"))
 
-;; The tick's PURPOSE is the observation; recording it as an AgentRun is bookkeeping. When
-;; tamaki is unavailable the watch must degrade, not die — measured twice on 2026-07-28, the
-;; tamaki checkout emptied itself while its supervisor was running (repo content gone,
-;; .tamaki/ still being written), which made every `tamaki exec` consumer exit 1. The second
-;; occurrence happened with no git operation of mine anywhere near that repo, so it is not a
-;; consequence of syncing it. Losing an hour of worldwide CT coverage to someone else's
-;; broken CLI is the wrong trade.
+;; The tick's PURPOSE is the observation; recording it as an AgentRun is bookkeeping, so when
+;; tamaki is unavailable the watch must degrade, not die. Three consecutive hourly ticks were
+;; lost to `TAMAKI_BIN missing` on 2026-07-28 and exited 1 without collecting anything.
+;;
+;; The cause was mine, and worth naming because the wrong diagnosis nearly stuck: this
+;; default pointed at orgs/kotoba-lang/tamaki, which is not a west project. The manifest puts
+;; tamaki at orgs/etzhayyim/tamaki, and that checkout has been intact and working the whole
+;; time. What I found at the kotoba-lang path — an "emptied checkout" with a live .tamaki/
+;; still being written — was simply a stray state directory left by a process whose cwd was
+;; there, not a repo destroying itself. I had recorded it as someone else's CLI self-
+;; destructing under its own supervisor. It was a path typo in this file.
+;;
+;; The degradation stays regardless: a missing binary is a bookkeeping outage, and losing an
+;; hour of worldwide CT coverage to one is the wrong trade whatever caused it.
 (defn tamaki-available? []
   (fs/existsSync tamaki))
 
