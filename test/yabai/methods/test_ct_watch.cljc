@@ -81,6 +81,21 @@
       "get-sth / get-entries are appended directly, so each base must end in /"))
 
 #?(:clj
+   (deftest sh*-surfaces-stderr-and-the-exit-code
+     (testing "a failing subprocess must be distinguishable from a succeeding one"
+       (let [ok (#'w/sh* ["git" "--version"])
+             bad (#'w/sh* ["git" "--no-such-flag-exists"])]
+         (is (zero? (:exit ok)))
+         (is (re-find #"git version" (:out ok)))
+         (is (pos? (:exit bad))
+             "the exit code is the only reliable success signal")
+         (is (seq (:err bad))
+             "git reports failure on stderr; a collector that reads only stdout sees nothing")
+         (is (empty? (:out bad))
+             "this is precisely why grepping stdout for /error|rejected|fatal/ reported a
+              non-fast-forward push as {:pushed true} on 2026-07-28 — stdout was empty")))))
+
+#?(:clj
    (when (= *file* (System/getProperty "babashka.file"))
      (let [{:keys [fail error]} (run-tests 'yabai.methods.test-ct-watch)]
        (System/exit (if (zero? (+ fail error)) 0 1)))))

@@ -126,14 +126,25 @@
 #?(:clj (def ^:private state-file (clojure.java.io/file data-dir "ct-watch-state.edn")))
 
 #?(:clj
-   (defn- sh
-     "Run argv, return stdout. Subprocess discipline from cf_sweep (bb/SCI restricts
-     HttpURLConnection output streams, and ships no JNDI for DNS TXT)."
+   (defn- sh*
+     "Run argv, return {:out :err :exit}. Use this whenever SUCCESS matters — git reports
+     rejections, auth failures and 'fatal:' on stderr with a non-zero exit, so judging a
+     subprocess by grepping its stdout silently calls every failure a success. Measured
+     2026-07-28: a non-fast-forward `git push` was reported as {:pushed true} and the tick
+     exited 0 with the findings sitting in a local commit only."
      [argv]
      (let [p (-> (ProcessBuilder. ^java.util.List argv) .start)
-           out (slurp (.getInputStream p))]
-       (.waitFor p)
-       out)))
+           out (slurp (.getInputStream p))
+           err (slurp (.getErrorStream p))]
+       {:out out :err err :exit (.waitFor p)})))
+
+#?(:clj
+   (defn- sh
+     "Run argv, return stdout. For calls whose OUTPUT is the point (dig, curl, git rev-parse);
+     if the outcome is the point, use sh*. Subprocess discipline from cf_sweep (bb/SCI
+     restricts HttpURLConnection output streams, and ships no JNDI for DNS TXT)."
+     [argv]
+     (:out (sh* argv))))
 
 #?(:clj (defn- http-get [url] (sh ["curl" "-sS" "--max-time" "60" url])))
 
@@ -360,10 +371,10 @@
                (when-let [nid (not-empty (str/trim (sh ["rad" "self" "--nid"])))]
                  (sh ["git" "-C" (str repo-root) "remote" "set-url" "--push" "rad"
                       (str "rad://" bare "/" nid)])))
-             (let [out (sh ["git" "-C" (str repo-root) "push" "rad" "HEAD:main"])]
+             (let [r (sh* ["git" "-C" (str repo-root) "push" "rad" "HEAD:main"])]
                {:configured true
-                :pushed (not (boolean (re-find #"(?i)error|rejected|fatal" (str out))))
-                :note (str/trim out)}))))
+                :pushed (zero? (:exit r))
+                :note (str/trim (str (:out r) (:err r)))}))))
        (catch Exception e {:configured true :pushed false :note (str "rad mirror failed: "
                                                                     (.getMessage e))}))))
 
@@ -390,12 +401,11 @@
                         " — " (:candidates summary) " candidates, "
                         (:fresh summary) " fresh (cumulative " (:cumulative summary) ")")
                _ (git "commit" "-q" "-m" msg)
-               push (sh ["git" "-C" (str repo-root) "push" "origin" "HEAD:main"])
-               bad? (fn [out] (boolean (re-find #"(?i)error|rejected|fatal" (str out))))]
+               push (sh* ["git" "-C" (str repo-root) "push" "origin" "HEAD:main"])]
            {:committed true
-            :pushed (not (bad? push))
+            :pushed (zero? (:exit push))
             :rad (mirror-to-radicle!)
-            :note (str/trim push)})))))
+            :note (str/trim (str (:out push) (:err push)))})))))
 
 #?(:clj
    (defn -main
