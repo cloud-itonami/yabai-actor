@@ -20,6 +20,33 @@ AML/sanctions/anti-social forces risk scoring + IP access filtering。
 > - **Analyzer** `methods/analyze.py` — fast-flux candidates · hosting concentration · IOC
 >   TLP/category load · IP-movement churn · cert-SAN pivots · **G6/G10 encryption self-audit**
 >   → `out/intel-report.md` + derived `:cti/*` datoms.
+> - **Telephony institution-impersonation scorer** `src/yabai/methods/line_infra.cljc`
+>   (2026-07-28) — the sibling of `phish_infra` on the other side of the same attack.
+>   phish_infra scores DOMAINS + hosting; this scores presented CALLING NUMBERS + the
+>   procurement ROUTE, which is the channel that actually carries the 2026 corporate fraud
+>   wave (警察庁 2025: ニセ警察詐欺 11,014件 / 1,005億円, 初期接触が電話 99.0%). Same two
+>   independent signals, same hard rules: **presentation** (inbound-only-shortcode spoof /
+>   whole-number OSA typo with the identical `(len-6)/2` budget / 6-digit-minimum prefix
+>   borrow / scramble) and **route-concentration** (does it share a trunk with numbers that
+>   already have a STRONG presentation hit). Route concentration alone never `:confirmed`;
+>   a lone weak presentation signal emits **no `:indicator/*` at all**; an institution's
+>   outbound-capable numbers are never scored. Pinned by a 24-number benign / 6-shape
+>   impersonation regression set.
+>
+>   Two things it deliberately CANNOT do, and both are the point. (1) An exact match on a
+>   published non-shortcode number returns **nil** — that is exactly what a genuine call from
+>   that number looks like, and pretending to distinguish them would be fabrication. (2)
+>   There is **no genuineness verdict at any input**: `nil` status means *no claim*, never
+>   *safe*. Caller-id is trivially spoofable, so an "is this call legitimate?" answer would
+>   launder a spoofed number into an attestation. `test_line_infra/no-genuineness-verdict-ever`
+>   enforces the absence. This pairs with cloud-itonami/meibo's **G11 no-inbound-attestation**
+>   gate: yabai scores the infrastructure, meibo hands back the institution's own published
+>   window to call instead. Why enumeration cannot work on its own: 警察庁 recorded 86,180
+>   crime-used international numbers in 11 months of 2025 (~258/day), so a weekly blocklist
+>   carries a standing backlog of ~1,806 live-but-unlisted numbers — scoring the route is the
+>   only closable loop. **Offline-default: there is no live telephony feed; the calibration
+>   corpus is the artifact.** SD analysis: kotoba-lang/loop-system-dynamics
+>   `corporate-vishing-fraud`.
 > - **Domain phishing scorer** `src/yabai/methods/phish_infra.cljc` (**ADR-0003**) — the
 >   brand-impersonation judgement, ported off the retired RisingWave `track-phishing-infra`
 >   tool. Two independent signals: **lexical** (whole-label OSA typo / boundary-anchored

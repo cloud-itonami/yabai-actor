@@ -13,11 +13,13 @@ exec bb -cp src:test -e '
          (quote yabai.methods.test-autorun)
          (quote yabai.methods.test-cf-scanners)
          (quote yabai.methods.test-merge-rows)
+         (quote yabai.methods.test-line-infra)
          (quote yabai.methods.test-phish-infra)
          (quote yabai.methods.test-to-edn))
 (let [r (clojure.test/run-tests (quote yabai.methods.test-autorun)
                                 (quote yabai.methods.test-cf-scanners)
                                 (quote yabai.methods.test-merge-rows)
-                                (quote yabai.methods.test-phish-infra)
+                                (quote yabai.methods.test-line-infra)
+         (quote yabai.methods.test-phish-infra)
                                 (quote yabai.methods.test-to-edn))]
   (System/exit (if (zero? (+ (:fail r) (:error r))) 0 1)))'
