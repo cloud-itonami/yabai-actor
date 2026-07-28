@@ -1,0 +1,135 @@
+[{:db/id -1,
+  :adr/id "adr-0005-maturity-fitness-function-and-radicle-mirror",
+  :adr/title "ADR-0005: 自律ループが最適化する決定論的 fitness function と、radicle への成長ミラー",
+  :adr/status "accepted, implemented, verified",
+  :adr/doc_type "adr",
+  :adr/date "2026-07-28",
+  :adr/deciders ["Jun Kawasaki (+ Claude)"],
+  :adr/topic "maturity-fitness-function-and-radicle-mirror",
+  :adr/related ["adr-0003-phish-infra-brand-impersonation-scorer"
+                "adr-0004-ct-watch-worldwide-supply-and-residency"
+                "adr-2607283100-yabai-phishing-watch-residency"
+                "adr-2607132300-design-quality-score"],
+  :adr/supersedes [],
+  :adr/superseded_by [],
+  :adr/repos ["etzhayyim/com-etzhayyim-yabai" "kotoba-lang/tamaki"],
+  :adr/authoritative true,
+  :adr/authoritative_for ["phishing watch の成熟度指標の定義（floors + 5 dimensions + weights + targets）とその anti-gaming 性質"
+                          "自律ループが最適化してよい数値がこの score であること"
+                          "tick が GitHub と radicle の両プレーンへ成長を流すこと"],
+  :adr/last_verified "2026-07-28",
+  :adr/body "# ADR-0005: fitness function と radicle ミラー
+
+## Status
+
+accepted, implemented, verified（2026-07-28）。実装は `src/yabai/methods/maturity.cljc`（新規）・
+`test/yabai/methods/test_maturity.cljc`（新規 6 tests / 24 assertions）・`docs/maturity.edn`（生成物）・
+`src/yabai/methods/ct_watch.cljc` の `mirror-to-radicle!`・`actor.edn` の `:rad-rid`・`run_tests.sh`。
+
+## Context
+
+オーナー質問:「成熟度を自律的に ai agent が上げるにはどうしたらいい? tamaki? murakumo ?」
+
+答えは **tamaki が上げる側・murakumo は基盤**（superproject ADR-2607283100 参照）だが、
+機構は既に両方動いており**足りないのは機構ではなかった**。足りないのは
+「何が上がったら成熟したのか」の数値。
+
+これはこのワークスペースが既に高い授業料を払った失敗である。ADR-2607132300 の実測:
+3-judge LLM panel が design system を clarity/deference/depth で軒並み 4.0-5.0/5 と採点した裏で、
+tap-target min-height 欠如・dvh フォールバック欠如・safe-area 片側未対応・theme-color meta 欠如という
+**4 つの具体的ギャップを 3 体とも一つも指摘しなかった**。そこでの答えが
+`90-docs/design-quality/audit.cljc` — LLM もブラウザも使わない決定論的 fitness function だった。
+
+さらに検出器には固有の罠がある。**素朴な指標「検出数を上げろ」の最短経路は閾値を緩めることで、
+それは検出器を悪くする変更**。実際 ADR-0003 の較正中に、一律 3-edit budget が
+`masterclass.com` / `whatsnew.com` / `ample.com` を confirmed 900 にした。
+指標は**動機づけになる前に、まず攻略不能でなければならない**。
+
+## Decision
+
+### 1. 二層、そして層の順序が設計そのもの
+
+**FLOORS（pass/fail 不変条件）** — benign 36 件が claim ゼロ、明白な偽装 7 件が取りこぼしゼロ。
+**どれか一つでも破れたら score は 0、reading は `:invalid`。**
+
+**GRADIENT（0..1 の 5 次元）** — 実際の改善だけが動かす:
+
+| dimension | weight | target | 現在 |
+|---|---|---|---|
+| `:brand-coverage` | 0.30 | 25 brands | 0.200（5 件） |
+| `:log-coverage` | 0.25 | 6 shards | 0.167（1 shard） |
+| `:observation-volume` | 0.20 | 2000 domains | 0.111 |
+| `:infra-breadth` | 0.15 | 60 ASNs | 0.317 |
+| `:signal-independence` | 0.10 | — | 0.597 |
+
+**初回計測 = 231/1000。** coverage に重みを寄せたのは意図的で、この watch の律速は
+「どう判定するか」ではなく**何が見えているか**（手書き 5 ブランド・1 shard）だから。
+
+### 2. Anti-gaming をテストで証明する（主張しない）
+
+`test_maturity.cljc` の中心的 assertion は「score が正しく計算される」ではなく
+**「攻略手が score を下げること」**:
+
+```
+一律 3-edit budget に緩める → 検出数は増える
+                            → masterclass.com / ample.com を claim する
+                            → floor 破壊 → score 0（何もしないより厳密に悪い）
+一方 brand を 1 件足す      → 閾値に触れずに score が上がる
+   CT shard を 1 本足す     → 同上
+```
+
+つまり**最も安い増点経路が正直な coverage 拡大**になっている。
+
+### 3. reading は commit する
+
+`docs/maturity.edn` に書き出す（生成物・手編集禁止）。**この 1 ファイルの git 履歴が成熟度曲線**で、
+data plane と同じ成長ログ性質を持つ。時計もネットワークも LLM も使わないので、同じリポジトリ状態は
+常に同じ score を返す — ループが自分のベースラインをずらせない。
+
+### 4. radicle への成長ミラー（実測で止まっていた）
+
+「github, radicle に edn 保存して、データも成長していくようになっている?」を確認したところ:
+
+- **GitHub**: 成長している（`data/*.kotoba.edn` が EDN、tick が毎時 commit + push）
+- **radicle**: **登録だけで成長していなかった。** identity `rad:zQbffdtAM1xvCY7JrhBfw1URn7Ty` は
+  west manifest にあり node も稼働中だったが、**rad 側 main は `cebe2b4`（7 commits 遅れ）で停止**。
+  原因は単純で、checkout に rad remote が無く `git push origin` が GitHub にしか届いていなかった。
+
+`actor.edn` に `:rad-rid` を追加し、`mirror-to-radicle!` が remote が無ければ作って push する。
+**radicle 到達不能は tick を落とさない**（GitHub に既に届いた発見を失う方が悪い）が、結果は
+握り潰さず報告する。手動 push で `cebe2b4..3507b72` を追いつかせ済み。
+
+### 5. tamaki 側の接続
+
+`loops/yabai-phishing-watch.edn` の objective が
+`bb -cp src -m yabai.methods.maturity` を「上げる対象」として名指す。`-main` は floor 破壊時に
+**exit 非ゼロ**なので、supervisor / CI が回帰を低スコアではなく失敗として扱える。
+
+## Verified（2026-07-28）
+
+```
+初回計測          231/1000, valid true
+anti-gaming       6 tests / 24 assertions — 緩めると 0、brand/shard 追加で上昇
+全体              88 tests / 10467 assertions green（run_tests.sh）
+radicle           mirror-to-radicle! → {:configured true :pushed true}、rad main が 3507b72 に追従
+決定論            ネットワーク・時計・LLM 不使用
+```
+
+## Consequences
+
+**Good**
+
+- 自律ループに**攻略不能な最適化対象**ができた。閾値を緩める改悪は score 0 として現れる。
+- 成熟度が `docs/maturity.edn` の git 履歴として時系列で残る。
+- データ成長が GitHub と radicle の両プレーンに流れる。
+
+**Bad / 負債**
+
+- **targets（25 brands / 6 shards / 2000 domains / 60 ASNs）は判断であって導出ではない。**
+  控えめかつ到達可能に置いた — 誰も動かせない target は指標が無いのと同じだから。到達したら上げる。
+- `:signal-independence` は detection method の分布で近似しており、真の独立性の証明ではない。
+- **`data/ingest/*.json` は EDN ではない**（既存 `pdns-sample.json` の慣習に倣った）。権威グラフ
+  `data/*.kotoba.edn` は EDN。ingest 中間層も EDN に寄せるかは別 ADR。
+- floor の calibration set は `maturity.cljc` と `test_phish_infra.cljc` に**二重に**書かれている。
+  片方だけ更新すると乖離する。
+"}]
