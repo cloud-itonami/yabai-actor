@@ -1,0 +1,52 @@
+;; yabai — CT-log worldwide observations (xenon2027h1). GENERATED — DO NOT EDIT BY HAND.
+[
+ {:domain/id "domain.api-cloud-cisco-com" :domain/fqdn "api.cloud.cisco.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1056444vb844-pbi-kv-httpszone54-z54-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1056444vb844-pbi-kv-httpszone54.z54.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1056444vb844-pbi-kv-httpszoned4-zd4-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1056444vb844-pbi-kv-httpszoned4.zd4.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1056444vp848-pbi-kv-httpszone36-z36-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1056444vp848-pbi-kv-httpszone36.z36.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216705mzi2-pbi-kv-httpszone13-z13-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216705mzi2-pbi-kv-httpszone13.z13.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216707mi6-pbi-kv-httpszonefd-zfd-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216707mi6-pbi-kv-httpszonefd.zfd.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216716mzi8-pbi-kv-httpszone59-z59-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216716mzi8-pbi-kv-httpszone59.z59.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216724mi5-pbi-kv-httpszoneca-zca-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216724mi5-pbi-kv-httpszoneca.zca.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216729mi2-pbi-kv-httpszoned0-zd0-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216729mi2-pbi-kv-httpszoned0.zd0.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.aws-re-15hri3bwetbi1-hy3qn1-cfg-cnn1-cache-amazonaws-com-cn" :domain/fqdn "aws-re-15hri3bwetbi1.hy3qn1.cfg.cnn1.cache.amazonaws.com.cn" :domain/tld "cn" :domain/sourcing :authoritative}
+ {:domain/id "domain.aws-re-15hri3bwetbi1-hy3qn1-cnn1-cache-amazonaws-com-cn" :domain/fqdn "aws-re-15hri3bwetbi1.hy3qn1.cnn1.cache.amazonaws.com.cn" :domain/tld "cn" :domain/sourcing :authoritative}
+ {:domain/id "domain.mild365test2ee4f118ab7303e36deva-cloud-high-microsoftdynamics-us" :domain/fqdn "mild365test2ee4f118ab7303e36deva.cloud.high.microsoftdynamics.us" :domain/tld "us" :domain/sourcing :authoritative}
+ {:domain/id "domain.mild365test2ee4f118ab7303e36devaos-cloud-high-microsoftdynamics-us" :domain/fqdn "mild365test2ee4f118ab7303e36devaos.cloud.high.microsoftdynamics.us" :domain/tld "us" :domain/sourcing :authoritative}
+ {:domain/id "domain.mild365test2ee4f118ab7303e36devaossoap-cloud-high-microsoftdynamics-us" :domain/fqdn "mild365test2ee4f118ab7303e36devaossoap.cloud.high.microsoftdynamics.us" :domain/tld "us" :domain/sourcing :authoritative}
+ {:domain/id "domain.mild365test2ee4f118ab7303e36devpos-cloud-high-microsoftdynamics-us" :domain/fqdn "mild365test2ee4f118ab7303e36devpos.cloud.high.microsoftdynamics.us" :domain/tld "us" :domain/sourcing :authoritative}
+ {:domain/id "domain.mild365test2ee4f118ab7303e36devret-cloud-high-microsoftdynamics-us" :domain/fqdn "mild365test2ee4f118ab7303e36devret.cloud.high.microsoftdynamics.us" :domain/tld "us" :domain/sourcing :authoritative}
+ {:domain/id "domain.z13-graphql-fabric-microsoft-int-com" :domain/fqdn "z13.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z13-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "z13.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z13-w-api-fabric-microsoft-int-com" :domain/fqdn "z13.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z36-graphql-fabric-microsoft-int-com" :domain/fqdn "z36.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z36-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "z36.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z36-w-api-fabric-microsoft-int-com" :domain/fqdn "z36.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z54-graphql-fabric-microsoft-int-com" :domain/fqdn "z54.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z54-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "z54.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z54-w-api-fabric-microsoft-int-com" :domain/fqdn "z54.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z59-graphql-fabric-microsoft-int-com" :domain/fqdn "z59.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z59-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "z59.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z59-w-api-fabric-microsoft-int-com" :domain/fqdn "z59.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zca-graphql-fabric-microsoft-int-com" :domain/fqdn "zca.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zca-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "zca.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zca-w-api-fabric-microsoft-int-com" :domain/fqdn "zca.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zd0-graphql-fabric-microsoft-int-com" :domain/fqdn "zd0.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zd0-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "zd0.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zd0-w-api-fabric-microsoft-int-com" :domain/fqdn "zd0.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zd4-graphql-fabric-microsoft-int-com" :domain/fqdn "zd4.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zd4-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "zd4.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zd4-w-api-fabric-microsoft-int-com" :domain/fqdn "zd4.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zfd-graphql-fabric-microsoft-int-com" :domain/fqdn "zfd.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zfd-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "zfd.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zfd-w-api-fabric-microsoft-int-com" :domain/fqdn "zfd.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:pdns/id "pdns.api-cloud-cisco-com.a" :pdns/domain "domain.api-cloud-cisco-com" :pdns/rrtype :a :pdns/rrdata ["3.175.64.14"] :pdns/ip "ip.v4.3-175-64-14" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.aws-re-15hri3bwetbi1-hy3qn1-cfg-cnn1-cache-amazonaws-com-cn.a" :pdns/domain "domain.aws-re-15hri3bwetbi1-hy3qn1-cfg-cnn1-cache-amazonaws-com-cn" :pdns/rrtype :a :pdns/rrdata ["172.31.20.214"] :pdns/ip "ip.v4.172-31-20-214" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.mild365test2ee4f118ab7303e36devaos-cloud-high-microsoftdynamics-us.a" :pdns/domain "domain.mild365test2ee4f118ab7303e36devaos-cloud-high-microsoftdynamics-us" :pdns/rrtype :a :pdns/rrdata ["52.227.65.17"] :pdns/ip "ip.v4.52-227-65-17" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.mild365test2ee4f118ab7303e36devaossoap-cloud-high-microsoftdynamics-us.a" :pdns/domain "domain.mild365test2ee4f118ab7303e36devaossoap-cloud-high-microsoftdynamics-us" :pdns/rrtype :a :pdns/rrdata ["52.227.65.17"] :pdns/ip "ip.v4.52-227-65-17" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.mild365test2ee4f118ab7303e36devpos-cloud-high-microsoftdynamics-us.a" :pdns/domain "domain.mild365test2ee4f118ab7303e36devpos-cloud-high-microsoftdynamics-us" :pdns/rrtype :a :pdns/rrdata ["52.227.65.17"] :pdns/ip "ip.v4.52-227-65-17" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:pdns/id "pdns.mild365test2ee4f118ab7303e36devret-cloud-high-microsoftdynamics-us.a" :pdns/domain "domain.mild365test2ee4f118ab7303e36devret-cloud-high-microsoftdynamics-us" :pdns/rrtype :a :pdns/rrdata ["52.227.65.17"] :pdns/ip "ip.v4.52-227-65-17" :pdns/first-seen-at "2026-07-28" :pdns/last-seen-at "2026-07-28" :pdns/sourcing :authoritative}
+ {:iphist/id "iphist.3-175-64-14.2026-07-28" :iphist/ip "ip.v4.3-175-64-14" :iphist/asn "asn.16509" :iphist/provider "AMAZON-02 - Amazon.com, Inc., US" :iphist/provider-type :unknown :iphist/country "US" :iphist/observed-at "2026-07-28" :iphist/sourcing :authoritative}
+ {:iphist/id "iphist.172-31-20-214.2026-07-28" :iphist/ip "ip.v4.172-31-20-214" :iphist/asn "asn." :iphist/provider "?" :iphist/provider-type :unknown :iphist/country "?" :iphist/observed-at "2026-07-28" :iphist/sourcing :authoritative}
+ {:iphist/id "iphist.52-227-65-17.2026-07-28" :iphist/ip "ip.v4.52-227-65-17" :iphist/asn "asn.8075" :iphist/provider "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US" :iphist/provider-type :unknown :iphist/country "US" :iphist/observed-at "2026-07-28" :iphist/sourcing :authoritative}
+]

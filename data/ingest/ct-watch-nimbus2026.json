@@ -1,0 +1,5 @@
+[
+ {"domain": "c7b5834d.sni.cloudflaressl.com", "observed": "2026-07-28", "ip": "104.20.24.198", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
+ {"domain": "f10f9986.sni.cloudflaressl.com", "observed": "2026-07-28", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
+ {"domain": "facebook-help-like-ads.ph", "observed": "2026-07-28", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"}
+]

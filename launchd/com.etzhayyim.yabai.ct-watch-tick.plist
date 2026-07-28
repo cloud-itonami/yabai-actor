@@ -58,8 +58,12 @@
     <string>/Users/junkawasaki/.tamaki</string>
     <key>TAMAKI_WORKER_ID</key>
     <string>yabai-ct-watch-tick</string>
+    <!-- `all` splits the entry budget across every shard in ct-watch/ct-logs, so every
+         cursor advances on every tick. Rotating one shard per tick would sample each only
+         every Nth hour, and one shard is not a view of worldwide issuance: argon2026h2
+         holds 2.21e9 entries while nimbus2026 alone holds another 5.68e9. -->
     <key>YABAI_CT_LOG</key>
-    <string>argon2026h2</string>
+    <string>all</string>
     <key>YABAI_CT_ENTRIES</key>
     <string>2000</string>
   </dict>

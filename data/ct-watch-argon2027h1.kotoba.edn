@@ -1,0 +1,15 @@
+;; yabai — CT-log worldwide observations (argon2027h1). GENERATED — DO NOT EDIT BY HAND.
+[
+ {:domain/id "domain.auto-s1056444vb844-pbi-kv-httpszone32-z32-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1056444vb844-pbi-kv-httpszone32.z32.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216696m8-pbi-kv-httpszone58-z58-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216696m8-pbi-kv-httpszone58.z58.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.auto-s1216707mi6-pbi-kv-httpszonefc-zfc-w-api-fabric-microsoft-int-com" :domain/fqdn "auto-s1216707mi6-pbi-kv-httpszonefc.zfc.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z32-graphql-fabric-microsoft-int-com" :domain/fqdn "z32.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z32-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "z32.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z32-w-api-fabric-microsoft-int-com" :domain/fqdn "z32.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z58-graphql-fabric-microsoft-int-com" :domain/fqdn "z58.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z58-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "z58.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.z58-w-api-fabric-microsoft-int-com" :domain/fqdn "z58.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zfc-graphql-fabric-microsoft-int-com" :domain/fqdn "zfc.graphql.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zfc-userdatafunctions-fabric-microsoft-int-com" :domain/fqdn "zfc.userdatafunctions.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+ {:domain/id "domain.zfc-w-api-fabric-microsoft-int-com" :domain/fqdn "zfc.w.api.fabric.microsoft-int.com" :domain/tld "com" :domain/sourcing :authoritative}
+]
