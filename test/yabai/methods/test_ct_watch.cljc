@@ -7,6 +7,7 @@
   planner that murakumo fans out. The live half (get-sth / get-entries / DNS / Cymru) is
   G7-gated and verified by running a tick, not here."
   (:require [yabai.methods.ct-watch :as w]
+            [yabai.methods.phish-infra :as phish]
             [clojure.test :refer [deftest is testing run-tests]]))
 
 (deftest u24-is-big-endian-and-unsigned
@@ -44,8 +45,18 @@
     (is (= ["bq-line.me" "masdercard.com" "whatsapp-income-redeeming.com.ph"]
            (w/interesting-names
             ["www.appliancesolutionsusa.com" "masdercard.com" "*.bq-line.me"
-             "db2c8a47.sni.cloudflaressl.com" "whatsapp-income-redeeming.com.ph"
-             "tanstia.teamproit.com"]))))
+             "whatsapp-income-redeeming.com.ph" "tanstia.teamproit.com"]))))
+  (testing "MEASURED COST of the wider roster: `sni.cloudflaressl.com` contains `icloud`
+            (sn-icloud-flaressl), and that name is one of the most common in CT. It is a
+            mid-word :contains hit, so it can never become a claim on its own — but it
+            still costs a DNS lookup on every tick. Pinned here so the price is visible
+            rather than discovered as a slow tick."
+    (is (= ["db2c8a47.sni.cloudflaressl.com"]
+           (w/interesting-names ["db2c8a47.sni.cloudflaressl.com"])))
+    (is (= ":contains" (:method (phish/lexical-hit "db2c8a47.sni.cloudflaressl.com")))
+        "weakest signal — no claim without infra corroboration")
+    (is (nil? (:status (first (phish/score-domains
+                               [{"domain" "db2c8a47.sni.cloudflaressl.com"}]))))))
   (testing "a brand's own domain is never a candidate — it is the victim"
     (is (= [] (w/interesting-names ["apple.com" "line.me" "mastercard.com"]))))
   (testing "deduped, wildcard-folded and sorted, so a tick is reproducible"

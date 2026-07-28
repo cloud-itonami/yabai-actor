@@ -10,6 +10,7 @@
   isolation, and 7 unambiguous impersonations that must still be caught. Loosening any
   threshold (edit budget, boundary rule, anchor threshold, tier table) fails those first."
   (:require [yabai.methods.phish-infra :as p]
+            [yabai.methods.maturity :as m]
             [clojure.test :refer [deftest is testing run-tests]]))
 
 ;; ── lexical primitives ──────────────────────────────────────────────────────
@@ -31,7 +32,10 @@
   (is (= 1 (p/default-max-edits "whatsapp")))
   (is (= 0 (p/default-max-edits "apple")) "a 5-letter token gets no edit budget")
   (is (= 0 (p/default-max-edits "line")))
-  (is (= [2 1 0 0 0] (mapv :max-edits p/default-brands)) "roster uses the derived rule"))
+  (is (= [2 1] (mapv :max-edits (take 2 p/default-brands)))
+      "the two brands with observed typosquats carry the derived budget")
+  (is (every? zero? (map :max-edits (drop 2 p/default-brands)))
+      "everything else is gated on evidence, not length — see budget-for"))
 
 (deftest containment-boundary-is-asymmetric
   (testing "leading position or a separator/digit before the token = bounded"
@@ -125,6 +129,38 @@
     (is (not (p/shared-infra? {"asn" 64500})))
     (is (p/shared-infra? {"asn" 13335}))))
 
+(deftest a-sites-own-subdomains-are-not-corroboration
+  (testing "one registrant on one host is one observation, however many names it has"
+    (let [obs (map (fn [d] {"domain" d "ip" "203.0.113.77" "asn" 64500 "observed" "2026-07-28"})
+                   ["applesofttech.com" "www.armo-agro.applesofttech.com"
+                    "www.liferehab.applesofttech.com" "www.rspn.applesofttech.com"])
+          sc (p/score-domains obs)]
+      (is (every? #(zero? (:cohost-anchors %)) sc)
+          "found live: these four confirmed each other at 900 before anchors were keyed
+           by registrable domain")
+      (is (every? #(nil? (:status %)) sc))))
+  (testing "registrable-domain collapses subdomains but keeps multi-label suffixes intact"
+    (is (= "applesofttech.com" (p/registrable-domain "www.armo-agro.applesofttech.com")))
+    (is (= "smbc.co.jp" (p/registrable-domain "login.x.smbc.co.jp")))
+    (is (= "a.com" (p/registrable-domain "a.com"))))
+  (testing "genuinely distinct registrants on one host still corroborate"
+    (let [sc (p/score-domains
+              (map (fn [d] {"domain" d "ip" "203.0.113.78" "asn" 64500})
+                   ["masdercard.com" "mastercand.com" "masteracard.com" "zxc9.example"]))]
+      (is (= 3 (:cohost-anchors (first (filter #(= "zxc9.example" (:domain %)) sc))))))))
+
+(deftest weakest-signals-need-two-neighbours-not-one
+  (testing ":contains or :scrambled on a SINGLE anchor peer is not a claim"
+    (is (= [0 nil] (p/infra-tier 300 120)))
+    (is (= [0 nil] (p/infra-tier 200 120))))
+  (testing "two peers is the threshold for the weakest signals"
+    (is (= [780 ":candidate"] (p/infra-tier 300 250)))
+    (is (= [780 ":candidate"] (p/infra-tier 200 250))))
+  (testing "a strong lexical signal still claims on one peer — that is what strength buys"
+    (is (= [820 ":candidate"] (p/infra-tier 450 120))))
+  (testing "found live: made-LINE-good reached 700 on one peer"
+    (is (= ":contains" (:method (p/lexical-hit "test.madelinegood.com"))))))
+
 (deftest live-ct-regression-2026-07-28
   (testing "the first worldwide CT slice this scorer ever saw — 11 lexical candidates,
             of which exactly the two co-hosted whatsapp scam domains earn a claim"
@@ -209,22 +245,11 @@
       (is (re-find #"(?m)^From: abuse-liaison@etzhayyim\.com" eml)))))
 
 ;; ── CALIBRATION REGRESSION — the tests that guard the claim itself ──────────
-(def benign
-  "Legitimate or neutral domains. In isolation (no co-hosting corroboration) NONE of these
-  may produce a phishing claim. Every one of them was confirmed at 900 by some looser
-  variant of this scorer during calibration."
-  ["masterclass.com" "mastercard.com" "postmaster.com" "cardmaster.com" "wastewater.com"
-   "masterdata.com" "mastermind.io" "whatsnew.com" "whatsapp.com" "whatsup.com"
-   "whatsoever.org" "whatsapp.net" "whats.app" "applied.ai" "ample.com" "apples.com"
-   "applesauce.com" "pineapple.co.uk" "appleton.us" "apple.com" "linen.example"
-   "linear.app" "pipeline.io" "airline.com" "deadline.org" "online.com" "line.me"
-   "smbc.co.jp" "smbc-card.com" "google.com" "cloudflare.com" "amazon.co.jp"
-   "rakuten.co.jp" "mastercard.us" "watsapp-news.example" "streamline.dev"])
-
-(def impersonations
-  "Unambiguous brand impersonations that must be caught with NO infra corroboration."
-  ["mastercards.com" "masdercard.com" "mastercand.com" "masteracard.com"
-   "whatsaap.com" "whotsapp.com" "whatssapp.com"])
+;; The calibration sets live in yabai.methods.maturity — the fitness function IS the floor,
+;; and a second copy here would drift the moment the roster grows (ADR-0005 recorded that
+;; duplication as debt; this removes it).
+(def benign m/benign-floor)
+(def impersonations m/impersonation-floor)
 
 (deftest no-claim-on-isolated-benign-domains
   (let [claimed (->> benign

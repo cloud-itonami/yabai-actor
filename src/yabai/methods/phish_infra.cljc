@@ -48,13 +48,62 @@
 ;; :home — the brand's own names. A domain on ANY brand's home list is out of scope entirely,
 ;; including against a DIFFERENT brand (`smbc-card.com` sits within the scramble ratio of
 ;; `mastercard` and was picking up a hit). Never report the victim.
+(def min-brand-token
+  "Shortest usable brand token. Containment on a 2-3 letter token is meaningless — `jcb`
+  or `au` would match a large fraction of random labels and flood the CT prefilter with
+  DNS lookups that can never become a claim. Such brands need a different detector (exact
+  label on an unexpected TLD), not this one." 4)
+
+;; `:seen` records WHERE the brand came from, so the roster stays auditable rather than a
+;; matter of taste:
+;;   :corpus — impersonated in THIS repo's own first-hand IOC data (the 2026-04-19 infra
+;;             sweep, the JP SMS smishing corpus, the gftd mail phishing corpus)
+;;   :target — not yet observed here; a well-known phishing target added for coverage.
+;;             A brand with no observation behind it is a hypothesis, and labelling it as
+;;             such keeps the next person from reading the roster as measured fact.
+(defn budget-for
+  "Edit budget for a roster entry. A whole-label typo is the only signal strong enough to
+  confirm alone, so it is granted only to brands this repo has ACTUALLY seen impersonated
+  (`:seen :corpus`). A `:target` brand — a hypothesis — gets 0 and must earn a claim
+  through containment plus co-hosting corroboration.
+
+  Length alone cannot make this call. `whatsapp` and `softbank` are both 8 letters, but
+  the corpus holds 20+ whatsapp typosquats while `softback` is an ordinary English word:
+  granting both a 1-edit budget caught the real squats AND confirmed `softback.example`
+  as phishing. Evidence, not length, is what distinguishes them. Promote a brand to
+  `:corpus` when a real impersonation of it lands in the data — not before."
+  [{:keys [brand seen max-edits]}]
+  (or max-edits (if (= :corpus seen) (default-max-edits brand) 0)))
+
 (def default-brands
-  (mapv (fn [b] (update b :max-edits #(or % (default-max-edits (:brand b)))))
-        [{:brand "mastercard" :home #{"mastercard.com" "mastercard.us"}}
-         {:brand "whatsapp"   :home #{"whatsapp.com" "whatsapp.net" "wa.me"}}
-         {:brand "apple"      :home #{"apple.com" "icloud.com" "apple.co.jp"}}
-         {:brand "line"       :home #{"line.me" "linecorp.com" "line-apps.com"}}
-         {:brand "smbc"       :home #{"smbc.co.jp" "smbc-card.com" "smbctb.co.jp"}}]))
+  (mapv (fn [b] (assoc b :max-edits (budget-for b)))
+        [;; ── observed in this repo's own corpora ──────────────────────────────
+         {:brand "mastercard" :seen :corpus :home #{"mastercard.com" "mastercard.us" "mastercard.co.jp"}}
+         {:brand "whatsapp"   :seen :corpus :home #{"whatsapp.com" "whatsapp.net" "wa.me"}}
+         {:brand "apple"      :seen :corpus :home #{"apple.com" "apple.co.jp" "applecard.apple"}}
+         {:brand "icloud"     :seen :corpus :home #{"icloud.com" "icloud.com.cn"}}
+         {:brand "line"       :seen :corpus :home #{"line.me" "linecorp.com" "line-apps.com" "lycorp.co.jp"}}
+         {:brand "smbc"       :seen :corpus :home #{"smbc.co.jp" "smbc-card.com" "smbctb.co.jp"}}
+         {:brand "rakuten"    :seen :corpus :home #{"rakuten.co.jp" "rakuten.com" "rakuten-card.co.jp"}}
+         {:brand "google"     :seen :corpus :home #{"google.com" "google.co.jp" "googlemail.com" "workspace.google.com"}}
+         ;; ── coverage: known phishing targets, not yet observed here ──────────
+         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp"}}
+         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com"}}
+         {:brand "paypal"     :seen :target :home #{"paypal.com" "paypal.co.jp" "paypal.me"}}
+         {:brand "netflix"    :seen :target :home #{"netflix.com" "netflix.co.jp"}}
+         {:brand "instagram"  :seen :target :home #{"instagram.com"}}
+         {:brand "facebook"   :seen :target :home #{"facebook.com" "fb.com"}}
+         {:brand "telegram"   :seen :target :home #{"telegram.org" "telegram.me" "t.me"}}
+         {:brand "coinbase"   :seen :target :home #{"coinbase.com"}}
+         {:brand "binance"    :seen :target :home #{"binance.com" "binance.us"}}
+         {:brand "mizuho"     :seen :target :home #{"mizuhobank.co.jp" "mizuho-fg.co.jp"}}
+         {:brand "mufg"       :seen :target :home #{"mufg.jp" "bk.mufg.jp" "mufg.com"}}
+         {:brand "docomo"     :seen :target :home #{"docomo.ne.jp" "nttdocomo.co.jp" "docomo.co.jp"}}
+         {:brand "softbank"   :seen :target :home #{"softbank.jp" "softbank.co.jp" "ymobile.jp"}}
+         {:brand "paypay"     :seen :target :home #{"paypay.ne.jp" "paypay-bank.co.jp"}}
+         {:brand "mercari"    :seen :target :home #{"mercari.com" "jp.mercari.com" "merpay.com"}}
+         {:brand "saison"     :seen :target :home #{"saisoncard.co.jp" "saison-card.co.jp"}}
+         {:brand "sagawa"     :seen :target :home #{"sagawa-exp.co.jp"}}]))
 
 ;; Multi-label public suffixes we care about. NOT a full PSL — a domain whose real suffix is
 ;; missing here just yields a longer label, which only ever makes a match harder (fail-safe).
@@ -75,6 +124,23 @@
       (and (>= n 3) (multi-label-suffixes (str/join "." (take-last 2 parts))))
       (str/join "." (drop-last 2 parts))
       :else (str/join "." (drop-last 1 parts)))))
+
+(defn registrable-domain
+  "The registered name plus its public suffix: `www.a.b.example.com` → `example.com`,
+  `x.smbc.co.jp` → `smbc.co.jp`. This is the unit of OWNERSHIP, and co-hosting
+  corroboration has to count it rather than counting FQDNs.
+
+  Found by running the wider roster over live CT data: `applesofttech.com` and its three
+  subdomains all resolve to one address, and counting them as four independent co-hosts
+  corroborated them into `:confirmed` 900. They are one registrant on one host — that is
+  not corroboration, it is the same observation four times."
+  [fqdn]
+  (let [parts (str/split (str/lower-case (str/trim (str fqdn))) #"\.")
+        n (count parts)]
+    (cond
+      (<= n 2) (str/join "." parts)
+      (multi-label-suffixes (str/join "." (take-last 2 parts))) (str/join "." (take-last 3 parts))
+      :else (str/join "." (take-last 2 parts)))))
 
 (defn normalize-label
   "Lowercase, drop everything that is not a letter or digit — so `mast-crade` and
@@ -201,7 +267,12 @@
     (and (>= lexical-score 450) (>= cohost 250)) [900 ":confirmed"]
     (and (>= lexical-score 450) (pos? cohost))   [820 ":candidate"]
     (and (>= lexical-score 200) (>= cohost 250)) [780 ":candidate"]
-    (and (>= lexical-score 200) (pos? cohost))   [700 ":candidate"]
+    ;; There is deliberately NO row for a weak lexical signal on a SINGLE anchor peer.
+    ;; It used to read `(and (>= lexical-score 200) (pos? cohost)) [700 :candidate]`, and
+    ;; live CT data showed what that admits: `test.madelinegood.com` contains `line`
+    ;; (made-LINE-good) and claimed 700 off one neighbour. Short tokens sit inside ordinary
+    ;; words — online, airline, deadline, timeline, discipline — so the weakest lexical
+    ;; signals need TWO corroborating neighbours (the 200/250 row above), never one.
     (>= cohost 400)                              [700 ":candidate"]
     (>= cohost 250)                              [600 ":candidate"]
     :else                                        [0 nil]))
@@ -246,7 +317,10 @@
                                        l (lex (get o "domain"))]
                                    (if (and ip l (not (shared-infra? o))
                                             (>= (:score l) anchor-threshold))
-                                     (update m ip (fnil conj #{}) (get o "domain"))
+                                     ;; keyed by REGISTRABLE DOMAIN, so a site's own
+                                     ;; subdomains collapse to one anchor
+                                     (update m ip (fnil conj #{})
+                                             (registrable-domain (get o "domain")))
                                      m)))
                                {} rows)]
      (->> rows
@@ -255,7 +329,9 @@
                        ip (get o "ip")
                        l (lex d)
                        lex-score (or (:score l) 0)
-                       peers (if (shared d) #{} (disj (get anchors-by-ip ip #{}) d))
+                       peers (if (shared d)
+                               #{}
+                               (disj (get anchors-by-ip ip #{}) (registrable-domain d)))
                        co (cohost-score (count peers))
                        total (+ lex-score co)
                        [conf status] (infra-tier lex-score co)]
