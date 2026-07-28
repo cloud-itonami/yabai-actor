@@ -1,0 +1,222 @@
+[{:db/id -1,
+  :adr/id "adr-0003-phish-infra-brand-impersonation-scorer",
+  :adr/title "ADR-0003: track-phishing-infra を cljc に移植 — ブランド偽装 + co-hosting の二信号スコアラ（phish_infra.cljc）",
+  :adr/status "accepted, implemented, verified",
+  :adr/doc_type "adr",
+  :adr/date "2026-07-28",
+  :adr/deciders ["Jun Kawasaki (+ Claude)"],
+  :adr/topic "phish-infra-brand-impersonation-scorer",
+  :adr/related ["adr-0001-yabai-methods-namespace-path-launchd-residency"
+                "adr-0002-crtsh-live-fetch-ingest-main"
+                "adr-2607170800-yabai-cloudflare-zone-scanner-ingest-honeypot"
+                "adr-2607170900-yabai-consolidate-to-independent-repo"
+                "adr-2607256100-yabai-tadori-cti-corpus-query-plane"],
+  :adr/supersedes [],
+  :adr/superseded_by [],
+  :adr/repos ["etzhayyim/com-etzhayyim-yabai" "com-junkawasaki/root"],
+  :adr/authoritative true,
+  :adr/authoritative_for ["ドメインのフィッシング/ブランド偽装判定ロジックの正本（phish_infra.cljc の lexical 信号・co-hosting 信号・tier 表・brand roster と edit budget の較正）"
+                          "2026-04-19 phishing-infra 観測コーパス（150 obs）の復元経路と、生成物 data/phishing-infra-20260419.kotoba.edn が tool 出力であること"
+                          "abuse report が DRAFT のみで送信経路を持たないこと"
+                          "既存 curated IOC ファイルとの id 衝突時に curated 側の first-seen を優先する deferral 規約"],
+  :adr/last_verified "2026-07-28",
+  :adr/body "# ADR-0003: track-phishing-infra の cljc 移植 — ブランド偽装 + co-hosting の二信号スコアラ
+
+## Status
+
+accepted, implemented, verified（2026-07-28）。実装は `src/yabai/methods/phish_infra.cljc`
+（新規）・`test/yabai/methods/test_phish_infra.cljc`（新規、14 tests / 71 assertions）・
+`data/ingest/phishing-infra-20260419.json`（復元した観測コーパス）・
+`data/phishing-infra-20260419.kotoba.edn`（生成物）・`data/passive-dns.merged.kotoba.edn`（再生成）。
+副次修正として `src/yabai/methods/analyze.cljc` の `-main` と `run_tests.sh`。
+
+## Context
+
+オーナー問い合わせ（2026-07-28）:「今の cloud-itonami で 世界中のドメイン情報を調査して、
+フィッシング詐欺の可能性や、リスクを判定して、記録する actor, repo は設計されている?」
+
+棚卸しの結果:
+
+- 現行 cljc actor（本リポ）は **ドメイン単位のフィッシング判定器を持っていなかった**。
+  `:indicator/category :phishing` は 40 件あるが、いずれも人手 curated（オーナー宛に
+  実際に届いたメール/SMS 由来）。唯一の自動判定は `analyze.cljc` の fast-flux
+  （TTL <= 300 かつ distinct A >= 3）で、これは **1 観測の中に複数 A レコードがある
+  passive-DNS 観測**を要求するため、単一 A の観測しか持たない我々のグラフでは発火しない。
+- 一方、**旧世代の `cloud-itonami/yabai`（2026-05-21 に etzhayyim/root/60-apps から
+  コピーされた TS/RisingWave 期のシード、`MIGRATION-TODO.md` は TRANSFORM のまま）**に
+  `tools/track-phishing-infra/` が残っていた。RisingWave テーブル
+  `vertex_yabai_infra_track` を psql で引き、ASN/registrar 別に abuse report `.eml` を
+  生成する `.mjs`。WhatsApp/LINE/Mastercard/Apple/SMBC を騙る typosquat 群を
+  DNS + WHOIS + Team Cymru ASN + crt.sh で観測した 2026-04-19 の実データを持つ。
+- **その基盤は retired**（RisingWave 撤去、ADR-2605301400 §T3）。生きているのは
+  10 本の `.eml` ドラフト本文だけで、そこに観測結果が散文として埋まっている状態だった。
+
+つまり「判定して記録する」actor は yabai として存在するが、**判定の中身が
+honeypot に飛んできた IP の scanner 判定に偏っており、ドメイン側は人手 curated しか
+なかった**。旧ツールの知見は死蔵されていた。
+
+**旧ツールの品質上の問題も同時に判明**: `.eml` の定型文は収集した全ドメインに対し
+`confidence >= 0.95` と書いていたが、その根拠となる規則はコードのどこにも無い
+（SQL は `WHERE asn IS NOT NULL` で絞るだけ）。実際、コーパスには
+`qaz11.help` / `uurl.one` / `000pq.help` のようにブランド名と何の字面上の関係も無い
+ドメインが多数含まれており、それらも一律 0.95 とされていた。移植にあたって
+この一律クレームをそのまま持ち込むことはしない。
+
+## Decision
+
+### 1. 判定を二つの独立した信号に分解する（`phish_infra.cljc`、portable）
+
+- **lexical** — registrable label がブランドを偽装しているか。
+  `:whole-label-typo`（OSA 距離 <= brand ごとの budget、600）/
+  `:bounded-contains`（境界付き包含、450）/ `:contains`（素の包含、300）/
+  `:scrambled`（距離比 <= 0.4 かつ長さ差 <= 2、200）。
+  OSA（隣接転置を 1 edit と数える Damerau-Levenshtein）を使うのは、コーパスが
+  `msatercard` `mastcaerd` のような転置型 typo に支配されているため。
+- **co-hosting** — 同じ解決先 IP を、既に **強い lexical 信号を持つ**ドメイン
+  （anchor、lexical >= 450）と共有しているか。anchor 5 件以上で 400、2 件以上で 250、
+  1 件で 120。**anchor になれるのは強い lexical 信号だけ**なので、無名ドメインの
+  集団が互いを confirm する bootstrap は構造的に起きない。自分自身は anchor に数えない。
+
+`infra-tier` が `[lexical cohost]` から `[confidence status]` を決める。二つの hard rule:
+
+- **co-hosting 単独では confirmed にしない。** IP 共有は corroboration であって
+  偽装の証拠ではない。
+- **弱い lexical 単独では何も主張しない（`[0 nil]`）。** 包含は本質的に曖昧
+  （`applesauce.com` は `apple` を含む）。infra corroboration が無ければ、その観測は
+  `:domain/*` の事実として記録するだけで **`:indicator/*` を出さない**。
+  単独で立てるのは `:whole-label-typo` だけ。
+
+### 2. edit budget は brand 長から導く（`default-max-edits` = max(0, (len-6)/2)）
+
+→ mastercard 2 / whatsapp 1 / apple・line・smbc 0。**benign 36 件 + 明白な偽装 7 件の
+対抗セットで較正した**（テストに固定）。実測した失敗:
+
+| budget | false positive |
+|---|---|
+| 一律 3 edits | `masterclass.com` `whatsnew.com` `masterdata.com` を confirmed 900 |
+| 8 文字に 2 edits | `whatsup.com` を confirmed 900 |
+| 4-5 文字に 1 edit | `ample.com` `apples.com` `linen.example` `applied.ai` を confirmed 900 |
+
+短いブランドが無防備になるわけではない。コーパスの `??-line.me` 群・
+`smbcservice.com`・`applestorls.com` はすべて `:bounded-contains` + co-hosting で
+confirmed に届く。
+
+境界規則は **非対称**にした: token が label 先頭にあるか、直前が非英字（区切り/数字）
+なら bounded。**末尾一致は bounded にしない** — `pipeline` `airline` `deadline` は
+どれも `line` で終わる。末尾一致は `:contains` に落ちる。
+
+さらに、**いずれかのブランドの home ドメインは一切スコアしない**（被害者を通報しない）。
+`smbc-card.com` が `mastercard` の `:scrambled` に引っかかっていたため、home 判定は
+brand 横断にした。
+
+### 3. 観測コーパスの復元（散文 .eml → 正規化 JSON → 生成 EDN）
+
+10 本の `.eml` から `{domain, ip, asn, asn_org, asn_country, registrar, observed}` を抽出し
+（= retired だった `vertex_yabai_infra_track` の列そのもの）
+`data/ingest/phishing-infra-20260419.json` に **150 観測**として固定。うち 3 件は
+hosting ドラフト（`WHERE asn IS NOT NULL`）から漏れて registrar ドラフトにだけ現れる
+ドメインで、解決先が無い観測として ip/asn 無しで収録した。
+
+`data/phishing-infra-20260419.kotoba.edn` は **この JSON からの生成物**（手編集禁止、
+再実行で byte 一致を確認済み）。ADR-2607170800 が hand-python 版 IOC を tool 出力へ
+一本化したのと同じ規律。
+
+### 4. curated first-hand ファイルへの deferral
+
+生成した indicator id が既存の curated ファイルのものと衝突する場合、**こちらは
+`:indicator/*` を出さない**。`merge-many` は fold 順（= ファイル名順）で先勝ちするため、
+`phishing-infra-...` は `sms-smishing-jp-...` より前に来て、**より古い
+`:indicator/first-seen-at` を黙って上書きしてしまう**。実際に 5 件
+（`mastrecart.com` `whaaatspp.cc` `whattsspp.com` `whiatsapp.com` `wnatspp.com`）が
+JP SMS smishing の観測（2025-11〜2026-02）と重なっていた。これは同一アクターが
+両キャンペーンに使ったという発見であって、上書きすべきものではない。
+deferral した id は生成ファイルのヘッダに明記する。
+**`:domain/*` `:pdns/*` `:iphist/*` は出す** — 解決先 IP / ASN / registrar は
+このコーパスだけが持っている情報で、既存 indicator を補強する。
+
+### 5. abuse report は DRAFT のみ・送信経路を持たない
+
+`abuse-drafts` は confirmed のみを ASN / registrar でクラスタし、純粋なデータ
+（`{:to :subject :body :cluster :domains}`）を返す。abuse 連絡先を持たないクラスタは
+黙って落とさず `:skipped` に理由付きで返す。`draft->eml` は日付を**引数で受ける**
+（時計を読まない = 再現可能）。名前空間全体に transport は無い。
+
+### 6. 副次修正（本作業の検証中に発見した既存バグ）
+
+- **`analyze.cljc` の `-main` は ADR-0001 以降ずっと死んでいた。** repo root を
+  `*file*` から辿っていたが、(a) 階層数が `methods/` 時代の 2 のままで、(b) そもそも
+  `*file*` を**関数本体で読んでいた** — 呼び出し時には caller のファイル（`bb -e` では
+  `NO_SOURCE_PATH`）に再束縛されるため NPE。cf_sweep / ingest / autorun と同じく
+  **load 時の `def`** で解決するよう修正。ADR-0002 は cf_sweep の (a) だけを直していた。
+- **`run_tests.sh` が autorun スイートしか走らせていなかった。** cf-scanners /
+  merge-rows / to-edn / phish-infra は手で叩かないと実行されず、回帰が green-check を
+  落とせなかった。全 5 スイートを走らせるようにした。
+
+## Verified（2026-07-28）
+
+```
+run_tests.sh              → 35 tests / 9191 assertions, 0 failures 0 errors（全5スイート）
+test_phish_infra          → 14 tests / 71 assertions
+  うち較正回帰: benign 36 件が isolation で claim ゼロ / 明白な偽装 7 件を取りこぼしゼロ
+phish_infra -main         → 150 obs → 78 confirmed / 63 candidate / 9 unscored, 438 rows
+                             5 indicator を curated へ defer
+rebuild-merged!           → 1009 rows / 667 indicators（phishing 40 → 176）
+analyze -main             → 159 domains · 151 pdns · 23 certs · 667 IOCs
+                             G6/G10 encryption 1/1, plaintext violations 0
+再実行の byte 一致          → phishing-infra / merged とも diff なし（決定論）
+clj-kondo                 → 新規/変更ファイルに error 0
+                             （warning 5 件は既存 baseline と同型の reader-conditional 偽陽性）
+```
+
+**unscored 9 件は仕様どおりの正直な結果**であって取りこぼしではない。
+`000pq.help` / `999op.help` は anchor のいない IP に 2 件だけで載っており、
+`whtsap.vip` / `whssitspp.com` / `msatrecrad.com` は解決先が無く co-hosting が使えない。
+旧ツールはこれらも 0.95 と主張していた。
+
+abuse draft は confirmed から ASN 4 クラスタ（ctgserver 36 / ucloud 32 / hostinger 9 /
+alibabacloud 1）+ registrar 3 クラスタ（Dynadot Inc 32 / NameSilo 16 / Gname 3）を生成。
+**送信はしていない。**
+
+## Consequences
+
+**Good**
+
+- ドメイン側の判定が**再現可能な規則**になった。confidence がどの信号で立ったかは
+  `:indicator/detection` と `:indicator/brand-target` として datom に載る。
+- 死蔵されていた 2026-04-19 の観測 150 件が kotoba EAVT に入り、merged →
+  autorun heartbeat → 統合クエリ面（ADR-2607256100 の `yabai-passive-dns` loader）
+  まで流れる。`:iphist/*` が analyze の hosting concentration 表に出るようになった。
+- JP smishing キャンペーンと 2026-04-19 infra sweep の**重なり 5 件**が判明し、
+  かつ古い first-seen を失わずに済んだ。
+- `analyze -main` が復活し、`run_tests.sh` が全スイートを守るようになった。
+
+**Bad / 負債**
+
+- **ブランド roster は 5 件の手書き。** 世界中のブランドを網羅しない。roster を増やす
+  経路（例: 上場企業名・商標 DB）は未設計。
+- **母集団の能動供給が無い。** 判定器はあるが、判定にかける新しいドメインを
+  世界規模で供給する仕組み（CT log の全 stream 購読 / CZDS zone file）はまだ無い。
+  現状の入力は「このコーパス」と `ingest --live --domain <fqdn>` の 1 件 pull。
+  これが「世界中のドメインを調査」への残りギャップの本体。
+- **co-hosting は IP 単位のみ。** ASN 単位の corroboration は入れていない（大手クラウドは
+  誰でもホストするため弱すぎる）。結果として同一 ASN の別 IP に載る
+  `000pq.help` 等は unscored のまま。
+- **registrable-label は完全な PSL を持たない**（主要な 2 段 suffix のみ）。未知の
+  2 段 suffix では label が長くなり、マッチが**難しくなる方向**にしか外れない（fail-safe）。
+- `:iphist/provider-type` は 4 ASN の明示表のみ。**`:bulletproof` は主張しない** —
+  「フィッシングを多数ホストしている」から防弾ホスティングだと推論するのは、観測が
+  支持しない attribution。
+
+## Alternatives considered
+
+1. **旧 `.mjs` をそのまま新リポにコピー** — 却下。RisingWave 依存で動かない上、
+   一律 0.95 という根拠のないクレームを持ち込む。
+2. **一律 confidence を維持して移植だけする** — 却下。`qaz11.help` と
+   `masdercard.com` を同じ確度で主張することになる。
+3. **fast-flux 検出の閾値を緩めて代用** — 却下。fast-flux は「1 観測に複数 A」を要求し、
+   このコーパスは単一 A。緩めても別の現象を測ることになる。
+4. **有料 feed（SecurityTrails / DNSDB）で母集団を供給** — 却下（この ADR では）。
+   ADR-2607256100 が `:feature-flagged-input` 限定・非 system-of-record と決めている。
+5. **`:contains` 単独でも candidate を出す** — 却下。`applesauce.com` `pipeline.io` が
+   claim を得てしまう。corroboration を必須にした。
+"}]

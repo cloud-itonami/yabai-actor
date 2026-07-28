@@ -265,12 +265,22 @@
     (P "]")
     (str (str/join "\n" (persistent! L)) "\n")))
 
+;; Repo root resolved at LOAD time (bb binds *file* to the file being loaded). It must not be
+;; read inside -main: there *file* is rebound to the CALLER's file, which is NO_SOURCE_PATH
+;; under `bb -e`, and the getParentFile chain then NPEs. src/yabai/methods/ -> root is 3 up.
+;; ADR-0001's methods/ -> src/yabai/methods/ move left the arithmetic at 2 levels here;
+;; ADR-0002 corrected the same staleness in cf_sweep but this call site was missed, so
+;; `analyze -main` had been dead since. Matches the cf_sweep / ingest / autorun pattern.
+#?(:clj (def ^:private repo-root
+          (let [d (-> *file* clojure.java.io/file .getParentFile)]
+            (.. d getParentFile getParentFile getParentFile))))
+
 #?(:clj
    (defn -main
      "CLI entry: analyze a CTI graph EDN → out/intel-report.md + out/cti-signals.kotoba.edn."
      [& argv]
      (let [argv (vec argv)
-           here (-> *file* clojure.java.io/file .getParentFile .getParentFile)
+           here repo-root
            default (let [merged (clojure.java.io/file here "data" "passive-dns.merged.kotoba.edn")]
                      (if (.exists merged)
                        merged

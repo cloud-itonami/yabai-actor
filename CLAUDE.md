@@ -20,16 +20,33 @@ AML/sanctions/anti-social forces risk scoring + IP access filtering。
 > - **Analyzer** `methods/analyze.py` — fast-flux candidates · hosting concentration · IOC
 >   TLP/category load · IP-movement churn · cert-SAN pivots · **G6/G10 encryption self-audit**
 >   → `out/intel-report.md` + derived `:cti/*` datoms.
+> - **Domain phishing scorer** `src/yabai/methods/phish_infra.cljc` (**ADR-0003**) — the
+>   brand-impersonation judgement, ported off the retired RisingWave `track-phishing-infra`
+>   tool. Two independent signals: **lexical** (whole-label OSA typo / boundary-anchored
+>   containment / scramble) and **co-hosting** (does it share a resolving IP with domains that
+>   already have a strong lexical hit). Two hard rules: co-hosting alone never `:confirmed`,
+>   and a lone weak lexical signal emits **no `:indicator/*` at all** — the observation stays
+>   a `:domain/*` fact with no claim attached. Brand home domains are never scored. The edit
+>   budget shrinks as the brand token grows (`(len-6)/2`) and is pinned by a 36-domain benign
+>   / 7-domain impersonation regression set; loosening it re-confirms `masterclass.com` and
+>   `ample.com` as phishing, which is how it was calibrated.
+>   `abuse-drafts` clusters `:confirmed` rows by ASN / registrar into report **drafts only** —
+>   the namespace has no transport and sends nothing.
 >
 > ```bash
-> python3 methods/ingest.py                                    # offline: seed → merged graph
-> python3 methods/ingest.py --source pdns --in data/ingest/pdns-sample.json
-> python3 methods/ingest.py --source ct --domain example.com --live   # G7: live crt.sh pull
-> python3 methods/analyze.py                                    # → out/ (encryption audit = PASS)
-> python3 methods/transact.py                                   # SAVE → live kotoba node (dry-run;
-> #   REFUSES if any :access/* is plaintext — G6/G10 enforced at write; live needs KOTOBA_SESSION_POP)
-> python3 methods/autorun.py --cycles 3 --fresh                 # AUTONOMOUS CTI heartbeat → LOCAL kotoba Datom log
+> # NOTE: the pipeline is cljc on bb since ADR-2606160842 — the python names below are the
+> # historical ones the ports are 1:1 with, not runnable files.
+> bb -cp src -e "(require '[yabai.methods.ingest :as i])(apply i/-main [\"--source\" \"ct\" \"--domain\" \"example.com\" \"--live\"])"
+> bb -cp src -e "(require '[yabai.methods.phish-infra :as p])(p/-main)"   # score observations → data/*.kotoba.edn
+> bb -cp src -e "(require '[yabai.methods.cf-sweep :as c])(prn (c/rebuild-merged!))"  # fold data/ → merged graph
+> bb -cp src -e "(require '[yabai.methods.analyze :as a])(a/-main)"       # → out/ (encryption audit = PASS)
+> bb -cp src -e "(require '[yabai.methods.autorun :as a])(a/-main \"--cycles\" \"1\")"   # CTI heartbeat
+> ./run_tests.sh                                                          # all 5 method suites
 > ```
+>
+> `autorun/-main` parses argv with `apply hash-map`, so **every flag needs a value** — a bare
+> `--fresh` raises `No value supplied for key`, and `--fresh` only truncates when `--log` is
+> also given. (The pre-port doc here recommended `--cycles 3 --fresh`, which throws.)
 >
 > **Autonomous on the Murakumo fleet (ADR-2605301400 §T3).** `methods/autorun.py` is the
 > self-driving CTI heartbeat — the same shape shionome / ipaddress use. Each cycle it runs the
