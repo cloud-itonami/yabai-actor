@@ -101,6 +101,48 @@
         "a cluster of weak hits cannot bootstrap-confirm itself")
     (is (nil? (:status (by-dom "random55.example"))))))
 
+(deftest shared-infra-ips-neither-give-nor-receive-corroboration
+  (let [mk (fn [d asn] {"domain" d "ip" "104.21.1.1" "asn" asn "observed" "2026-07-28"})
+        ;; five strong lexical hits, all answering on ONE Cloudflare address
+        cdn (p/score-domains (map #(mk % 13335)
+                                  ["masdercard.com" "mastercand.com" "masteracard.com"
+                                   "mastercards.com" "zxc001.example"]))
+        ;; the same five on a VPS ASN, where one address IS one tenant
+        vps (p/score-domains (map #(mk % 63949)
+                                  ["masdercard.com" "mastercand.com" "masteracard.com"
+                                   "mastercards.com" "zxc001.example"]))
+        by (fn [rs d] (first (filter #(= d (:domain %)) rs)))]
+    (is (every? #(zero? (:cohost-anchors %)) cdn)
+        "a CDN address is shared by design — co-location there is not evidence")
+    (is (nil? (:status (by cdn "zxc001.example")))
+        "so the nameless domain gets no free ride from the CDN cluster")
+    (is (= 4 (:cohost-anchors (by vps "zxc001.example")))
+        "on dedicated infra the same cluster does corroborate")
+    (is (= ":candidate" (:status (by vps "zxc001.example"))))
+    (is (= ":confirmed" (:status (by cdn "masdercard.com")))
+        "a whole-label typo still stands alone — the CDN rule only removes corroboration"))
+  (testing "the list is conservative: an unknown ASN is treated as dedicated"
+    (is (not (p/shared-infra? {"asn" 64500})))
+    (is (p/shared-infra? {"asn" 13335}))))
+
+(deftest live-ct-regression-2026-07-28
+  (testing "the first worldwide CT slice this scorer ever saw — 11 lexical candidates,
+            of which exactly the two co-hosted whatsapp scam domains earn a claim"
+    (let [obs [{"domain" "whatsapp-income-assistance-center.com.ph" "ip" "45.79.222.138" "asn" 63949}
+               {"domain" "whatsapp-income-redeeming.com.ph" "ip" "45.79.222.138" "asn" 63949}
+               {"domain" "baggybet-online.com" "ip" "172.67.144.143" "asn" 13335}
+               {"domain" "www.baggybet-online.com" "ip" "104.21.39.106" "asn" 13335}
+               {"domain" "appletonsoap.co.uk" "ip" "23.227.38.65" "asn" 13335}
+               {"domain" "ar.royallineb2b.com" "ip" "104.18.40.102" "asn" 13335}
+               {"domain" "gst.applefm.com" "ip" "185.53.179.200" "asn" 206834}
+               {"domain" "api.moonliner.org" "ip" "208.91.197.27" "asn" 40034}]
+          claimed (->> (p/score-domains obs) (filter :status) (mapv :domain))]
+      (is (= ["whatsapp-income-assistance-center.com.ph" "whatsapp-income-redeeming.com.ph"]
+             claimed))))
+  (testing "a two-level public suffix does not swallow the brand"
+    (is (= "whatsapp-income-redeeming"
+           (p/registrable-label "whatsapp-income-redeeming.com.ph")))))
+
 ;; ── EAVT bridge ─────────────────────────────────────────────────────────────
 (deftest bridge-emits-domain-pdns-iphist-and-only-earned-indicators
   (let [scored (p/score-domains cohost-obs)

@@ -1,0 +1,75 @@
+#!/usr/bin/env bb
+;; yabai — validation of the CT-log supply collector (ADR-0004).
+;; Run: bb --classpath src:test test/yabai/methods/test_ct_watch.cljc
+(ns yabai.methods.test-ct-watch
+  "Pins the offline-testable half of the CT watch: MerkleTreeLeaf field arithmetic, name
+  normalization, the pure prefilter that keeps the firehose off the network, and the slice
+  planner that murakumo fans out. The live half (get-sth / get-entries / DNS / Cymru) is
+  G7-gated and verified by running a tick, not here."
+  (:require [yabai.methods.ct-watch :as w]
+            [clojure.test :refer [deftest is testing run-tests]]))
+
+(deftest u24-is-big-endian-and-unsigned
+  (is (= 0 (w/u24 [0 0 0] 0)))
+  (is (= 1 (w/u24 [0 0 1] 0)))
+  (is (= 0x10000 (w/u24 [1 0 0] 0)))
+  (is (= 0xffffff (w/u24 [-1 -1 -1] 0))
+      "JVM bytes are signed; 0xff must not read back as -1")
+  (is (= 258 (w/u24 [9 9 0 1 2] 2)) "reads at the offset, not the head"))
+
+(deftest entry-type-and-cert-span
+  (let [x509 (into (vec (repeat 10 0)) [0 0 0 0 4])          ; entry_type 0, len 4
+        precert (into (vec (repeat 10 0)) [0 1])]            ; entry_type 1
+    (is (= 0 (w/entry-type x509)))
+    (is (= 1 (w/entry-type precert)))
+    (is (= [:leaf 15 4] (w/cert-span x509 nil))
+        "x509_entry: the cert follows the uint24 length at offset 12")
+    (is (= [:extra 3 7] (w/cert-span precert [0 0 7]))
+        "precert: the SAN-bearing cert is in extra_data, not the leaf")
+    (is (nil? (w/cert-span precert nil))
+        "a precert with no extra_data is skipped, not guessed at")
+    (is (nil? (w/cert-span (into (vec (repeat 10 0)) [9 9]) nil))
+        "unknown entry types are skipped")))
+
+(deftest normalize-fqdn-rejects-what-is-not-a-domain
+  (is (= "foo.example.com" (w/normalize-fqdn "*.Foo.EXAMPLE.com ")) "wildcard + case + space")
+  (is (= "a.b.co.jp" (w/normalize-fqdn "a.b.co.jp")))
+  (is (nil? (w/normalize-fqdn "1.2.3.4")) "SANs carry IPs too")
+  (is (nil? (w/normalize-fqdn "localhost")) "no dot")
+  (is (nil? (w/normalize-fqdn "")) )
+  (is (nil? (w/normalize-fqdn "hello world.com")) "junk names are dropped"))
+
+(deftest prefilter-keeps-the-firehose-off-the-network
+  (testing "only names with a lexical signal are worth a DNS lookup"
+    (is (= ["bq-line.me" "masdercard.com" "whatsapp-income-redeeming.com.ph"]
+           (w/interesting-names
+            ["www.appliancesolutionsusa.com" "masdercard.com" "*.bq-line.me"
+             "db2c8a47.sni.cloudflaressl.com" "whatsapp-income-redeeming.com.ph"
+             "tanstia.teamproit.com"]))))
+  (testing "a brand's own domain is never a candidate — it is the victim"
+    (is (= [] (w/interesting-names ["apple.com" "line.me" "mastercard.com"]))))
+  (testing "deduped, wildcard-folded and sorted, so a tick is reproducible"
+    (is (= ["bq-line.me"] (w/interesting-names ["*.bq-line.me" "bq-line.me" "BQ-LINE.ME"])))))
+
+(deftest plan-slices-covers-the-range-exactly
+  (let [s (w/plan-slices 100 210 4)]
+    (is (= 4 (count s)))
+    (is (= 100 (:start (first s))))
+    (is (= 210 (:end (last s))))
+    (is (= 110 (reduce + (map #(- (:end %) (:start %)) s))) "no gaps, no overlap")
+    (is (apply <= (mapcat (juxt :start :end) s)) "contiguous and ordered"))
+  (testing "a remainder is spread over the leading slices, never dropped"
+    (is (= 10 (reduce + (map #(- (:end %) (:start %)) (w/plan-slices 0 10 3))))))
+  (testing "degenerate inputs do not produce work"
+    (is (nil? (w/plan-slices 5 5 4)))
+    (is (nil? (w/plan-slices 10 5 4)))))
+
+(deftest known-logs-are-shaped-like-ct-endpoints
+  (is (contains? w/ct-logs w/default-log))
+  (is (every? #(re-matches #"https://.+/" %) (vals w/ct-logs))
+      "get-sth / get-entries are appended directly, so each base must end in /"))
+
+#?(:clj
+   (when (= *file* (System/getProperty "babashka.file"))
+     (let [{:keys [fail error]} (run-tests 'yabai.methods.test-ct-watch)]
+       (System/exit (if (zero? (+ fail error)) 0 1)))))

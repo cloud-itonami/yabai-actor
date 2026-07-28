@@ -59,7 +59,10 @@
 ;; Multi-label public suffixes we care about. NOT a full PSL — a domain whose real suffix is
 ;; missing here just yields a longer label, which only ever makes a match harder (fail-safe).
 (def multi-label-suffixes
-  #{"co.jp" "ne.jp" "or.jp" "co.uk" "org.uk" "com.au" "com.br" "com.cn" "com.tw" "co.kr"})
+  #{"co.jp" "ne.jp" "or.jp" "ac.jp" "go.jp" "co.uk" "org.uk" "ac.uk" "gov.uk"
+    "com.au" "net.au" "org.au" "com.br" "com.cn" "net.cn" "org.cn" "com.tw"
+    "co.kr" "or.kr" "com.hk" "com.sg" "com.my" "co.id" "com.ph" "co.th" "com.vn"
+    "com.mx" "com.ar" "com.tr" "co.in" "co.za" "co.nz" "com.pl" "com.ua"})
 
 (defn registrable-label
   "Everything left of the public suffix, lowercased. `bq-line.me` → `bq-line`,
@@ -203,6 +206,32 @@
     (>= cohost 250)                              [600 ":candidate"]
     :else                                        [0 nil]))
 
+(def shared-ip-asns
+  "ASNs whose addresses are SHARED BY DESIGN — reverse proxies and CDNs where thousands of
+  unrelated sites answer on one IP. Co-hosting there carries no information, so these
+  observations neither give nor receive corroboration.
+
+  Found by running the CT watch (ADR-0004) against live worldwide issuance: the 2026-04-19
+  corpus was all dedicated attacker IPs, so nothing exercised this. On the open firehose,
+  `baggybet-online.com` / `appletonsoap.co.uk` / `ar.royallineb2b.com` are three unrelated
+  brand-containment hits that all answer on Cloudflare — corroborating each other would have
+  been pure noise.
+
+  Deliberately SHORT and conservative: an unknown ASN is treated as dedicated (corroborating),
+  because a wrong entry here silently deletes a real signal. VPS/hosting ASNs belong nowhere
+  near this list — a Linode box serving two `whatsapp-income-*` domains IS the observation."
+  #{13335    ; Cloudflare
+    132892   ; Cloudflare (Spectrum / additional)
+    54113    ; Fastly
+    20940    ; Akamai (mapped edge)
+    16625    ; Akamai
+    32787})  ; Akamai (Prolexic)
+
+(defn shared-infra?
+  "True when this observation sits on an address that is shared by design."
+  [obs]
+  (contains? shared-ip-asns (get obs "asn")))
+
 (defn score-domains
   "Score every observation. obs = [{\"domain\" \"ip\" \"asn\" \"asn_org\" \"asn_country\"
   \"registrar\" \"observed\"}] (string-keyed, JSON-shaped like bridge-pdns). Returns a vector
@@ -211,10 +240,12 @@
   ([obs brands]
    (let [rows (->> obs (filter #(seq (str (get % "domain" "")))) vec)
          lex (into {} (map (fn [o] [(get o "domain") (lexical-hit (get o "domain") brands)]) rows))
+         shared (into {} (map (juxt #(get % "domain") shared-infra?) rows))
          anchors-by-ip (reduce (fn [m o]
                                  (let [ip (get o "ip")
                                        l (lex (get o "domain"))]
-                                   (if (and ip l (>= (:score l) anchor-threshold))
+                                   (if (and ip l (not (shared-infra? o))
+                                            (>= (:score l) anchor-threshold))
                                      (update m ip (fnil conj #{}) (get o "domain"))
                                      m)))
                                {} rows)]
@@ -224,13 +255,13 @@
                        ip (get o "ip")
                        l (lex d)
                        lex-score (or (:score l) 0)
-                       peers (disj (get anchors-by-ip ip #{}) d)
+                       peers (if (shared d) #{} (disj (get anchors-by-ip ip #{}) d))
                        co (cohost-score (count peers))
                        total (+ lex-score co)
                        [conf status] (infra-tier lex-score co)]
                    {:domain d :ip ip :asn (get o "asn") :asn-org (get o "asn_org")
                     :asn-country (get o "asn_country") :registrar (get o "registrar")
-                    :observed (get o "observed")
+                    :observed (get o "observed") :shared-infra (boolean (shared d))
                     :lexical l :lexical-score lex-score
                     :cohost-anchors (count peers) :cohost-score co
                     :score total :confidence conf :status status})))

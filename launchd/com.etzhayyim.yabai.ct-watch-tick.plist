@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.etzhayyim.yabai.ct-watch-tick — the worldwide phishing watch, resident on the
+  murakumo fleet host. Same class as com.kotoba-lang.toshokan-tick /
+  com.kotoba-lang.toshokan-patents-tick / com.gftd.fleet-ci-murakumo-tick.
+
+  Each tick (ADR-0004): advance the CT-log cursor -> pull the next slice of certificates
+  issued anywhere on earth -> extract SAN names -> PURE lexical prefilter (ADR-0003) ->
+  DNS A + Team Cymru ASN for the handful that survive -> fold into the cumulative
+  observation set -> score -> rebuild the merged CTI graph -> commit + push.
+
+  Residency is a LaunchAgent, not a murakumo WASM on-tick — the same call ADR-2607255100
+  §4 made for toshokan. This is the honest production path today; the fleet is used for
+  WIDTH, not for the heartbeat: `bb -cp src -m yabai.methods.ct-watch --plan N --live`
+  emits a task batch for `murakumo task run --tasks`, which fans slices over 132 cores.
+
+  StartInterval=3600 — CT logs advance continuously, so an hourly slice is a steady sample
+  rather than a race. A tick exits when done (it is NOT a long-running loop), so KeepAlive
+  would be wrong: it would respawn the tick back-to-back and hammer the logs.
+  RunAtLoad=true — also sample at login.
+
+  The tick is deterministic (no model), so it is recorded via `tamaki exec` and shows up in
+  `tamaki status` with its real argv and exit code.
+
+  Install:
+    cp launchd/run-yabai-ct-watch-tick.cljs ~/.gftd/
+    cp launchd/com.etzhayyim.yabai.ct-watch-tick.plist ~/Library/LaunchAgents/
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.etzhayyim.yabai.ct-watch-tick.plist
+    launchctl enable  gui/$(id -u)/com.etzhayyim.yabai.ct-watch-tick
+  Stop / uninstall:
+    launchctl bootout gui/$(id -u)/com.etzhayyim.yabai.ct-watch-tick
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.etzhayyim.yabai.ct-watch-tick</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/nbb</string>
+    <string>/Users/junkawasaki/.gftd/run-yabai-ct-watch-tick.cljs</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    <key>GIT_SSH_COMMAND</key>
+    <string>/usr/bin/ssh</string>
+    <key>GIT_TERMINAL_PROMPT</key>
+    <string>0</string>
+    <key>YABAI_ROOT</key>
+    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai</string>
+    <key>TAMAKI_BIN</key>
+    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/kotoba-lang/tamaki/bin/tamaki</string>
+    <key>TAMAKI_STATE_DIR</key>
+    <string>/Users/junkawasaki/.tamaki</string>
+    <key>TAMAKI_WORKER_ID</key>
+    <string>yabai-ct-watch-tick</string>
+    <key>YABAI_CT_LOG</key>
+    <string>argon2026h2</string>
+    <key>YABAI_CT_ENTRIES</key>
+    <string>2000</string>
+  </dict>
+
+  <key>StartInterval</key>
+  <integer>3600</integer>
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/junkawasaki/.gftd/yabai-ct-watch-tick.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/junkawasaki/.gftd/yabai-ct-watch-tick.stdout.log</string>
+  <key>WorkingDirectory</key>
+  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai</string>
+</dict>
+</plist>
