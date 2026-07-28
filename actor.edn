@@ -1,6 +1,11 @@
 {:did        "did:web:etzhayyim.github.io:com-etzhayyim-yabai"
  :handle     "yabai.etzhayyim.com"
  :ipns-key   "yabai-actor"
+ ;; Radicle identity (matches the west manifest's userdata rad-rid). The resident tick reads
+ ;; this to mirror its own commits onto the radicle plane. Without it `git push` reaches
+ ;; GitHub only and the radicle copy silently stops growing — measured 2026-07-28, radicle
+ ;; main was stuck at cebe2b4, seven commits behind, because the checkout had no rad remote.
+ :rad-rid    "rad:zQbffdtAM1xvCY7JrhBfw1URn7Ty"
  :graph-type "com.etzhayyim.yabai.graph"
  :published  "2026-06-28"
  :bundle [["data" "data"]

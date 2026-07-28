@@ -1,0 +1,95 @@
+#!/usr/bin/env bb
+;; yabai — validation of the maturity fitness function (ADR-0005).
+;; Run: bb --classpath src:test test/yabai/methods/test_maturity.cljc
+(ns yabai.methods.test-maturity
+  "The point of this file is the anti-gaming test.
+
+  A fitness function handed to an autonomous agent is only as good as its cheapest exploit.
+  For a detector the cheapest exploit is loosening a threshold: detections go up, the number
+  looks better, the detector is worse. So the load-bearing assertion here is not `the score
+  is computed correctly` — it is `the exploit makes the score go DOWN, to zero`."
+  (:require [yabai.methods.maturity :as m]
+            [yabai.methods.phish-infra :as phish]
+            [clojure.test :refer [deftest is testing run-tests]]))
+
+(def graph
+  [{":domain/id" "domain.a"} {":domain/id" "domain.b"}
+   {":iphist/id" "h1" ":iphist/asn" "asn.1"} {":iphist/id" "h2" ":iphist/asn" "asn.2"}
+   {":indicator/id" "i1" ":indicator/category" ":phishing" ":indicator/detection" ":whole-label-typo"}
+   {":indicator/id" "i2" ":indicator/category" ":phishing" ":indicator/detection" ":cohost-pivot"}
+   {":indicator/id" "i3" ":indicator/category" ":scanner"}])
+
+(def state {:cursors {"argon2026h2" 1 "nimbus2026" 2}})
+
+(deftest dimensions-read-repo-state-not-opinion
+  (let [d (m/dimensions graph state)]
+    (is (= (/ (double (count phish/default-brands)) 25.0) (:brand-coverage d)))
+    (is (= (/ 2.0 6.0) (:log-coverage d)) "two cursors of six known shards")
+    (is (= (/ 2.0 2000.0) (:observation-volume d)))
+    (is (= (/ 2.0 60.0) (:infra-breadth d)) "distinct :iphist/asn, not row count")
+    (is (= 0.5 (:signal-independence d))
+        "one of the two phishing claims rests on a corroborating signal"))
+  (testing "no phishing indicators means no independence to report, not a divide by zero"
+    (is (= 0.0 (:signal-independence (m/dimensions [] {}))))))
+
+(deftest dimensions-are-capped-so-one-axis-cannot-carry-the-score
+  (let [huge (into graph (map (fn [i] {":domain/id" (str "d" i)}) (range 5000)))]
+    (is (= 1.0 (:observation-volume (m/dimensions huge state))))
+    (is (<= (:maturity/score (m/score huge state {:ok true})) 1000))))
+
+(deftest score-is-zero-when-a-floor-is-broken
+  (let [broken {:ok false :benign-claims [["ample.com" 900]] :missed-impersonations []}]
+    (is (= 0 (:maturity/score (m/score graph state broken))))
+    (is (false? (:maturity/valid (m/score graph state broken))))
+    (is (pos? (:maturity/score (m/score graph state {:ok true}))))))
+
+;; ── the assertion this whole namespace exists for ───────────────────────────
+(deftest loosening-a-threshold-lowers-the-score-instead-of-raising-it
+  (testing "the real floors hold on the shipped calibration"
+    (let [f (m/check-floors)]
+      (is (:ok f) (str "shipped scorer broke its own floor: " (pr-str f)))
+      (is (= [] (:benign-claims f)))
+      (is (= [] (:missed-impersonations f)))))
+  (testing "the cheapest way to raise detection counts breaks a floor"
+    ;; This is the exact edit that once shipped: a flat 3-edit budget on every brand.
+    ;; It DOES raise detections — and it confirms masterclass.com / whatsnew.com / ample.com.
+    (let [loose (mapv #(assoc % :max-edits 3) phish/default-brands)
+          claimed (->> m/benign-floor
+                       (keep (fn [d]
+                               (let [r (first (phish/score-domains [{"domain" d}] loose))]
+                                 (when (:status r) d))))
+                       vec)]
+      (is (seq claimed)
+          "if a loosened budget stopped producing false positives this test is meaningless")
+      (is (some #{"masterclass.com"} claimed))
+      (is (some #{"ample.com"} claimed))
+      ;; …and under this fitness function that shows up as ZERO, not as progress.
+      (let [floors {:ok false :benign-claims (mapv (fn [d] [d 900]) claimed)
+                    :missed-impersonations []}]
+        (is (= 0 (:maturity/score (m/score graph state floors)))
+            "loosening must be scored strictly worse than doing nothing")))))
+
+(deftest coverage-is-the-cheap-honest-way-up
+  (testing "adding a brand raises the score without touching any threshold"
+    (let [base (m/score graph state {:ok true})
+          wider (with-redefs [phish/default-brands
+                              (conj phish/default-brands
+                                    {:brand "rakuten" :max-edits 0 :home #{"rakuten.co.jp"}})]
+                  (m/score graph state {:ok true}))]
+      (is (> (:maturity/score wider) (:maturity/score base)))))
+  (testing "tailing another CT shard does too"
+    (is (> (:maturity/score (m/score graph (assoc-in state [:cursors "xenon2026h2"] 3) {:ok true}))
+           (:maturity/score (m/score graph state {:ok true}))))))
+
+(deftest reading-explains-itself
+  (let [r (m/score graph state {:ok true})
+        txt (m/render r)]
+    (is (contains? r :maturity/dimensions) "a bare number cannot be argued with")
+    (is (contains? r :maturity/targets))
+    (is (re-find #"DO NOT EDIT BY HAND" txt))
+    (is (re-find #"COVERAGE" txt) "the file states how to raise it honestly")))
+
+#?(:clj
+   (when (= *file* (System/getProperty "babashka.file"))
+     (let [{:keys [fail error]} (run-tests 'yabai.methods.test-maturity)]
+       (System/exit (if (zero? (+ fail error)) 0 1)))))

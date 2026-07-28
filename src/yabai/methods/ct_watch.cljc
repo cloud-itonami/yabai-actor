@@ -327,6 +327,39 @@
         :written (when (seq folded) (.getName out-file))})))
 
 #?(:clj
+   (defn mirror-to-radicle!
+     "Mirror the tick's commits onto the radicle plane, if this actor declares a :rad-rid.
+
+     GitHub and radicle are two independent copies, and a `git push origin` reaches only the
+     first. That is not hypothetical drift: on 2026-07-28 the radicle copy of this repo was
+     seven commits behind at cebe2b4 — registered in the west manifest, node running, and
+     receiving nothing — purely because the checkout had no rad remote. The remote is created
+     here when missing so a fresh clone grows both planes without a manual setup step.
+
+     Never fatal: radicle being unreachable must not fail a tick whose findings already
+     reached GitHub. The outcome is reported, not swallowed."
+     []
+     (try
+       (let [actor-file (clojure.java.io/file repo-root "actor.edn")
+             rid (when (.exists actor-file)
+                   (:rad-rid (clojure.edn/read-string (slurp actor-file))))]
+         (if-not rid
+           {:configured false}
+           (let [bare (str/replace rid #"^rad:" "")
+                 remotes (sh ["git" "-C" (str repo-root) "remote"])]
+             (when-not (some #{"rad"} (str/split-lines remotes))
+               (sh ["git" "-C" (str repo-root) "remote" "add" "rad" (str "rad://" bare)])
+               (when-let [nid (not-empty (str/trim (sh ["rad" "self" "--nid"])))]
+                 (sh ["git" "-C" (str repo-root) "remote" "set-url" "--push" "rad"
+                      (str "rad://" bare "/" nid)])))
+             (let [out (sh ["git" "-C" (str repo-root) "push" "rad" "HEAD:main"])]
+               {:configured true
+                :pushed (not (boolean (re-find #"(?i)error|rejected|fatal" (str out))))
+                :note (str/trim out)}))))
+       (catch Exception e {:configured true :pushed false :note (str "rad mirror failed: "
+                                                                    (.getMessage e))}))))
+
+#?(:clj
    (defn commit-and-push!
      "Commit exactly the files a tick owns and push. A resident tick runs inside the shared
      west checkout, so leaving the tree dirty would block `west update` and collide with
@@ -349,9 +382,11 @@
                         " — " (:candidates summary) " candidates, "
                         (:fresh summary) " fresh (cumulative " (:cumulative summary) ")")
                _ (git "commit" "-q" "-m" msg)
-               push (sh ["git" "-C" (str repo-root) "push" "origin" "HEAD:main"])]
+               push (sh ["git" "-C" (str repo-root) "push" "origin" "HEAD:main"])
+               bad? (fn [out] (boolean (re-find #"(?i)error|rejected|fatal" (str out))))]
            {:committed true
-            :pushed (str/blank? (str/trim (or (re-find #"(?i)error|rejected|fatal" push) "")))
+            :pushed (not (bad? push))
+            :rad (mirror-to-radicle!)
             :note (str/trim push)})))))
 
 #?(:clj
