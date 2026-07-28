@@ -1,0 +1,176 @@
+[{:db/id -1,
+  :adr/id "adr-0004-ct-watch-worldwide-supply-and-residency",
+  :adr/title "ADR-0004: CT log を母集団供給にして判定を常駐化する（ct_watch + tamaki exec + LaunchAgent、murakumo は幅）",
+  :adr/status "accepted, implemented, verified live",
+  :adr/doc_type "adr",
+  :adr/date "2026-07-28",
+  :adr/deciders ["Jun Kawasaki (+ Claude)"],
+  :adr/topic "ct-watch-worldwide-supply-and-residency",
+  :adr/related ["adr-0003-phish-infra-brand-impersonation-scorer"
+                "adr-0002-crtsh-live-fetch-ingest-main"
+                "adr-2607283000-yabai-phish-infra-cljc-port"
+                "adr-2607255100-toshokan-self-growing-resident-ingest"
+                "adr-2607251552-toshokan-patents-worldwide-patent-resident-harvest"
+                "adr-2607256000-murakumo-task-plane-distributed-execution"],
+  :adr/supersedes [],
+  :adr/superseded_by [],
+  :adr/repos ["etzhayyim/com-etzhayyim-yabai" "com-junkawasaki/root"],
+  :adr/authoritative true,
+  :adr/authoritative_for ["ドメイン母集団の供給経路が Certificate Transparency log の直接 tail であること（crt.sh ではない）とその理由の実測"
+                          "常駐の実体（LaunchAgent com.etzhayyim.yabai.ct-watch-tick + tamaki exec、murakumo は heartbeat ではなく幅）"
+                          "co-hosting corroboration から共有 IP（CDN/reverse proxy）ASN を除外する規約"
+                          "tick 出力を cursor ごとに分けず 1 log 1 累積ファイルに fold する規約"],
+  :adr/last_verified "2026-07-28",
+  :adr/body "# ADR-0004: CT log を母集団供給にして判定を常駐化する
+
+## Status
+
+accepted, implemented, verified live（2026-07-28）。実装は `src/yabai/methods/ct_watch.cljc`
+（新規）・`test/yabai/methods/test_ct_watch.cljc`（新規 6 tests / 30 assertions）・
+`launchd/run-yabai-ct-watch-tick.cljs` + `launchd/com.etzhayyim.yabai.ct-watch-tick.plist`
+（新規）・`src/yabai/methods/phish_infra.cljc`（共有 IP 規約を追加）・`run_tests.sh`。
+
+## Context
+
+ADR-0003 は判定器を作ったが **母集団供給が無い**ことを残ギャップとして明記していた。
+オーナー指示（2026-07-28）:「これが tamaki cli, murakumo で 常駐化するように整えて」。
+
+つまり必要なのは 2 つ: ①毎 tick 新しいドメインが供給されること ②その loop が常駐すること。
+供給が無いまま常駐させると、同じ 150 件を永遠に再スコアするだけの見せかけになる。
+
+### crt.sh はブランド横断クエリに使えない（実測 2026-07-28）
+
+ADR-0002 は crt.sh を「1 ドメイン指定の live pull」に使っており、それは正しい。しかし
+母集団供給に転用できるかを測ると:
+
+| query | 結果 |
+|---|---|
+| `?q=etzhayyim.com` | 200（36 秒） |
+| `?q=mastercard.com` | **503** |
+| `?q=%25mastercard%25` | **502 / 404**（不安定） |
+
+大きいブランドや substring 検索は全表 LIKE スキャンになり、公開インスタンスは返せない。
+ここに常駐 loop を建てるのは砂上の楼閣。
+
+### CT log 本体は機械向けインタフェースを持っている
+
+Certificate Transparency は **地球上で発行された公開信頼される証明書すべて**を記録し、
+`get-sth` / `get-entries`（RFC 6962）は鍵不要でまさに機械消費のために存在する。実測:
+
+```
+argon2026h2 tree_size = 2,204,282,072   nimbus2026 tree_size = 5,681,219,744
+```
+
+## Decision
+
+### 1. 供給は CT log の直接 tail（`ct_watch.cljc`）
+
+cursor → `get-entries` → MerkleTreeLeaf をほどいて X.509 → SAN の DNS 名。
+`x509_entry` は leaf 内、`precert_entry` は SAN を持つ本体が `extra_data` 側にある。
+
+### 2. 順序がすべて — 純粋な prefilter を先に置く
+
+CT は firehose（1 log で 22 億件）。全部を DNS 解決するのは不可能かつ無礼。
+**`phish-infra/lexical-hit` は純粋でコストゼロなので、これを先に全件へ通し、
+生き残った一握りだけがネットワークに触れる。** 実測 2000 entries → 3035 SAN 名 →
+2372 distinct → **11 candidate** → その 11 件だけ DNS A + Team Cymru ASN。
+
+ASN は `dig TXT <reversed-ip>.origin.asn.cymru.com`（public / 無料 / 鍵不要）。
+**bb は JNDI を積んでいない**（`javax.naming` 不在）ので JVM の DNS API ではなく
+`dig` サブプロセスを使う — cf_sweep の curl と同じ規律。
+
+### 3. 常駐は LaunchAgent + `tamaki exec`（toshokan パターン）
+
+- Label `com.etzhayyim.yabai.ct-watch-tick`、`StartInterval` 3600、`RunAtLoad`。
+- entry は `~/.gftd/run-yabai-ct-watch-tick.cljs`（nbb）で、中身は
+  **`tamaki exec` 経由**で `bb -m yabai.methods.ct-watch --live --score --commit` を回す。
+  tick は決定論的で **loop の中にモデルが居ない**ので、`tamaki exec` の
+  `:agent.run/mode :external` として実 argv と exit code のまま記録される
+  （`tamaki status` に出る）。`local` モードは kotoba-code = モデルに渡す経路なので使わない。
+- **murakumo WASM on-tick にはしない。** ADR-2607255100 §4 が toshokan で下したのと同じ判断で、
+  今日の正直な production 経路は LaunchAgent（`toshokan-tick` / `toshokan-patents-tick` /
+  `fleet-ci-murakumo-tick` と同クラス）。
+
+### 4. murakumo は heartbeat ではなく「幅」に使う
+
+`--plan N` が `murakumo task run --tasks` にそのまま渡せる task batch を出す（純粋、
+何も実行しない）。実測: 4 slice を `murakumo task plan --tasks` に通し、planner が
+fleet（11/12 node・132 cores 到達可能）へ配置することを確認。**heartbeat を fleet に
+散らすのではなく、広域 sweep をしたいときだけ fan-out する。**
+
+### 5. tick は commit + push する
+
+resident tick は共有 west checkout の中で走るので、放置すると tree が永久に dirty になり
+`west update` と他作業を壊す。daemon が所有するパスだけを stage して commit / push する
+（toshokan の「git remote が成長ログ」）。push 失敗は exit 非ゼロで正直に落とす。
+
+## 実データが暴いた 2 つの欠陥（どちらも live 実行でのみ発覚）
+
+### (a) CDN の共有 IP を corroboration に数えていた
+
+2026-04-19 コーパスは全部が攻撃者専有 IP だったのでこの穴は露出しなかった。世界の
+firehose を流すと `baggybet-online.com` / `appletonsoap.co.uk` / `ar.royallineb2b.com` の
+ような**無関係な containment ヒットが軒並み Cloudflare の IP に載る**。放置すれば互いを
+corroborate してしまう。`shared-ip-asns`（Cloudflare / Fastly / Akamai）を追加し、
+**共有 IP の観測は corroboration を与えも受けもしない**ようにした。リストは意図的に短く
+保守的 — 誤登録は本物の信号を黙って消すので、未知 ASN は専有側に倒す。VPS/hosting は
+入れない（Linode の 1 台に `whatsapp-income-*` が 2 件載っているのは**まさに観測**）。
+
+### (b) tick 出力が前 tick を上書きしていた
+
+`ct-watch-<log>-<cursor>.json` を毎回作って「その 1 ファイルだけ」を score する設計は、
+次の tick で前回の発見を merged グラフから消し、かつ年 8760 ファイルを積む。
+**1 log 1 累積ファイル**に fold する形に変更（先勝ちなので `first-seen-at` は前進しない）。
+副次効果として **co-hosting は tick を重ねるほど強くなる** — 数日前に見たドメインが
+今日見たドメインに corroborate される。
+
+## Verified（2026-07-28、すべて実測）
+
+```
+CT tail          argon2026h2 tree_size 2.20e9、2000 entries/tick を実 pull
+prefilter        3035 SAN → 2372 distinct → 11 candidate（= ネットワークに触れるのは 11 件）
+enrichment       11/11 が DNS A + Cymru ASN 解決（AS135377 = UCLOUD HK もコーパスと一致）
+実検出           whatsapp-income-assistance-center.com.ph と
+                 whatsapp-income-redeeming.com.ph（同一 Linode IP 45.79.222.138）を candidate 820
+偽陽性           同 slice の CDN 上 containment ノイズ 9 件はすべて claim なし
+累積 fold        27 → 49 observations（fresh 22）、cursor 前進を確認
+G7 gate          --live 無しで REFUSED + exit 1
+tests            49 tests / 10083 assertions green（run_tests.sh、全 6 スイート）
+murakumo         --plan 4 の batch を task plan が受理し fleet へ配置（実行はしていない）
+clj-kondo        新規/変更ファイルに error 0
+```
+
+## Consequences
+
+**Good**
+
+- 判定器に**世界規模の母集団が毎時流れ込む**ようになった。ADR-0003 の残ギャップの本体が閉じた。
+- 常駐が `tamaki status` から見える（決定論 tick を模型実行と偽らない形で）。
+- prefilter-first のおかげで、firehose に対してネットワーク負荷は candidate 件数に比例する。
+
+**Bad / 負債・正直な限界**
+
+- **これは sampling であって完全網羅ではない。** 1 tick = 1 log の 1 slice。毎時 2000 entries は
+  世界の発行量のごく一部。コーパスに無いことは「未サンプル」であって「フィッシングでない」
+  ではない。幅は murakumo fan-out で広げる。
+- **fan-out の実行は未検証。** `task plan` は通ったが、実際に `task run` するには各 node に
+  yabai checkout が要る（現 `--plan` は `cd <repo-root>` を撃つ）。node への配置は follow-up。
+- **CT log shard は時限式**（`argon2026h2` 等）。`ct-logs` は 2026-07-28 時点の一覧で、
+  期限が来たら更新が要る。未知の shard は例外で落とす（黙って何も tail しない、を避けた）。
+- **ブランド roster は依然 5 件**（ADR-0003 の負債のまま）。firehose を流しても roster に
+  無いブランドの偽装は素通りする。ここが次に効く投資。
+- `shared-ip-asns` は手書きの短いリスト。CDN は他にもある。
+
+## Alternatives considered
+
+1. **crt.sh をブランド横断で叩く** — 却下。上表のとおり 502/503 で成立しない。
+2. **有料 feed（SecurityTrails / DNSDB）で供給** — 却下。ADR-2607256100 が
+   `:feature-flagged-input` 限定・非 system-of-record と決めている。
+3. **murakumo WASM on-tick で常駐** — 却下（今回は）。ADR-2607255100 §4 と同じ判断で、
+   LaunchAgent が今日の正直な経路。CID capability 経路（ADR-2607252400）は upgrade path。
+4. **tamaki `loop`（continuous agentic loop）として登録** — 却下。`loops/*.edn` は
+   runner（codex/claude/grok）を回す**モデル入りの成熟度ループ**で、本 tick は決定論。
+   混ぜると「モデルが判定している」と読める記録になる。tamaki 上の正しい表現は `exec`。
+5. **prefilter せず全 SAN を DNS 解決** — 却下。2000 entries で 2372 件、毎時では数万件の
+   DNS を無関係な第三者に撃つことになる。純粋な述語で落とせるものを落とす。
+"}]
