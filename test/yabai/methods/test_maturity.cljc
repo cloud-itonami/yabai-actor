@@ -23,7 +23,8 @@
 
 (deftest dimensions-read-repo-state-not-opinion
   (let [d (m/dimensions graph state)]
-    (is (= (/ (double (count phish/default-brands)) 25.0) (:brand-coverage d)))
+    (is (= (/ (double (count phish/default-brands)) (double (:brands m/targets)))
+           (:brand-coverage d)))
     (is (= (/ 2.0 6.0) (:log-coverage d)) "two cursors of six known shards")
     (is (= (/ 2.0 2000.0) (:observation-volume d)))
     (is (= (/ 2.0 60.0) (:infra-breadth d)) "distinct :iphist/asn, not row count")
@@ -42,6 +43,40 @@
     (is (= 0 (:maturity/score (m/score graph state broken))))
     (is (false? (:maturity/valid (m/score graph state broken))))
     (is (pos? (:maturity/score (m/score graph state {:ok true}))))))
+
+(deftest edit-budget-is-gated-on-evidence-not-length
+  (testing "only brands actually seen impersonated in this repo's corpora carry a budget"
+    (is (= [["mastercard" 2] ["whatsapp" 1]]
+           (vec (keep #(when (pos? (:max-edits %)) [(:brand %) (:max-edits %)])
+                      phish/default-brands)))))
+  (testing "a :target brand is a hypothesis and gets none, whatever its length"
+    (is (zero? (phish/budget-for {:brand "softbank" :seen :target})))
+    (is (= 1 (phish/budget-for {:brand "softbank" :seen :corpus})))
+    (is (pos? (phish/default-max-edits "softbank"))
+        "length alone would have granted one — evidence is what withholds it"))
+  (testing "why: whatsapp and softbank are both 8 letters, but softback is a real word"
+    (let [loose (mapv #(assoc % :max-edits (phish/default-max-edits (:brand %)))
+                      phish/default-brands)]
+      (is (:status (first (phish/score-domains [{"domain" "softback.example"}] loose)))
+          "with a length-derived budget the ordinary word is confirmed as phishing")
+      (is (nil? (:status (first (phish/score-domains [{"domain" "softback.example"}]))))
+          "with the evidence gate it is not")))
+  (testing "every roster brand clears the minimum token length"
+    (is (every? #(>= (count (:brand %)) phish/min-brand-token) phish/default-brands))))
+
+(deftest roster-growth-must-carry-its-own-benign-probes
+  (testing "each brand with a budget has a near-miss in the floor set"
+    (doseq [b (filter #(pos? (:max-edits %)) phish/default-brands)]
+      (is (some #(and (not= % (:brand b))
+                      (<= (phish/osa-distance (phish/normalize-label
+                                               (phish/registrable-label %))
+                                              (:brand b))
+                          (+ 2 (:max-edits b))))
+                m/benign-floor)
+          (str "no benign near-miss probes " (:brand b) " — the floor would pass vacuously"))))
+  (testing "each brand's own domains are in the floor, so the victim is never reported"
+    (is (every? (fn [b] (some (set m/benign-floor) (:home b)))
+                phish/default-brands))))
 
 ;; ── the assertion this whole namespace exists for ───────────────────────────
 (deftest loosening-a-threshold-lowers-the-score-instead-of-raising-it
@@ -71,12 +106,13 @@
 
 (deftest coverage-is-the-cheap-honest-way-up
   (testing "adding a brand raises the score without touching any threshold"
-    (let [base (m/score graph state {:ok true})
-          wider (with-redefs [phish/default-brands
-                              (conj phish/default-brands
-                                    {:brand "rakuten" :max-edits 0 :home #{"rakuten.co.jp"}})]
-                  (m/score graph state {:ok true}))]
-      (is (> (:maturity/score wider) (:maturity/score base)))))
+    (let [narrow (with-redefs [phish/default-brands (vec (take 5 phish/default-brands))]
+                   (m/score graph state {:ok true}))
+          base (m/score graph state {:ok true})]
+      (is (> (:maturity/score base) (:maturity/score narrow))
+          "the 25-brand roster scores above the original five")
+      (is (< (:brand-coverage (m/dimensions graph state)) 1.0)
+          "and the target still has headroom — a dimension pinned at 1.0 has stopped measuring")))
   (testing "tailing another CT shard does too"
     (is (> (:maturity/score (m/score graph (assoc-in state [:cursors "xenon2026h2"] 3) {:ok true}))
            (:maturity/score (m/score graph state {:ok true}))))))

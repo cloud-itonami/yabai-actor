@@ -13,9 +13,10 @@
 
   Two layers, and the ORDER between them is the whole design:
 
-    FLOORS   — pass/fail invariants. 36 benign domains must produce no claim; 7 unambiguous
-               impersonations must still be caught. A broken floor sets the score to 0 and
-               marks the reading `:invalid`.
+    FLOORS   — pass/fail invariants. Every benign domain must produce no claim; every
+               unambiguous impersonation must still be caught. A broken floor sets the score
+               to 0 and marks the reading `:invalid`. The benign set GROWS WITH THE ROSTER —
+               see benign-floor for why a fixed set passes vacuously.
     GRADIENT — five 0..1 dimensions that a real improvement moves.
 
   Why floors first: the naive metric (`raise detections`) is optimised fastest by LOOSENING a
@@ -33,15 +34,38 @@
 
 ;; ── floors: the calibration sets, shared verbatim with test_phish_infra ──────
 (def benign-floor
-  "Legitimate or neutral domains. In isolation NONE may produce a phishing claim. Every one
-  was confirmed at 900 by some looser variant of the scorer during calibration."
-  ["masterclass.com" "mastercard.com" "postmaster.com" "cardmaster.com" "wastewater.com"
+  "Legitimate or neutral domains. In isolation NONE may produce a phishing claim.
+
+  This set must GROW WITH THE ROSTER. A floor that only probes the brands it was written
+  for passes vacuously the moment new brands are added — the check would keep reporting
+  `ok` while the new tokens quietly manufacture false positives. Every brand carrying an
+  edit budget needs at least one near-miss here, and every brand's own domains belong in
+  the list too (the scorer must never report the victim)."
+  [;; original five — each was confirmed at 900 by some looser variant during calibration
+   "masterclass.com" "mastercard.com" "postmaster.com" "cardmaster.com" "wastewater.com"
    "masterdata.com" "mastermind.io" "whatsnew.com" "whatsapp.com" "whatsup.com"
    "whatsoever.org" "whatsapp.net" "whats.app" "applied.ai" "ample.com" "apples.com"
    "applesauce.com" "pineapple.co.uk" "appleton.us" "apple.com" "linen.example"
    "linear.app" "pipeline.io" "airline.com" "deadline.org" "online.com" "line.me"
    "smbc.co.jp" "smbc-card.com" "google.com" "cloudflare.com" "amazon.co.jp"
-   "rakuten.co.jp" "mastercard.us" "watsapp-news.example" "streamline.dev"])
+   "rakuten.co.jp" "mastercard.us" "watsapp-news.example" "streamline.dev"
+   ;; THE probe that locks the length rule: `finance` is one edit from `binance`. It stays
+   ;; unclaimed only because a 7-letter token gets a zero edit budget. Raise binance's
+   ;; budget to 1 and finance.com becomes phishing.
+   "finance.com" "finances.example" "refinance.example"
+   ;; near-misses for the brands that DO carry a budget (mastercard 2, whatsapp/microsoft/
+   ;; instagram/facebook/telegram/coinbase/softbank 1)
+   "telegraph.co.uk" "faceboard.example" "combase.example" "softbase.example"
+   "microsoftware.example" "instagraph.example" "coinbased.example" "softback.example"
+   ;; containment collisions — these must stay unclaimed WITHOUT infra corroboration
+   "amazonas.com" "amazonia.org" "googolplex.example" "googlemaps-guide.example"
+   "mizuhomachi.example" "sagawa-ryokan.example" "saisonnier.example" "lineup.example"
+   "paypaltips.example" "netflixed.example" "mercatinos.example"
+   ;; every roster brand's own domains — never report the victim
+   "icloud.com" "google.co.jp" "amazon.com" "microsoft.com" "outlook.com" "paypal.com"
+   "netflix.com" "instagram.com" "facebook.com" "fb.com" "telegram.org" "t.me"
+   "coinbase.com" "binance.com" "mizuhobank.co.jp" "mufg.jp" "docomo.ne.jp"
+   "softbank.jp" "paypay.ne.jp" "mercari.com" "saisoncard.co.jp" "sagawa-exp.co.jp"])
 
 (def impersonation-floor
   "Unambiguous brand impersonations that must be caught with NO infra corroboration."
@@ -67,7 +91,10 @@
 ;; Targets are the point at which a dimension is "mature", NOT a cap on ambition. They are
 ;; deliberately modest and reachable: a target nobody can move is the same as no metric.
 (def targets
-  {:brands 25          ; a roster that covers the brands actually impersonated in JP/global phishing
+  ;; Raised from 25 to 50 on 2026-07-28: the roster reached 25 and the dimension pinned at
+  ;; 1.0, which is the metric saying the target stopped being informative. A target nobody
+  ;; can move is the same as no metric — and so is one already met.
+  {:brands 50          ; a roster that covers the brands actually impersonated in JP/global phishing
    :logs 6             ; every shard in ct-watch/ct-logs being tailed, not just one
    :observations 2000  ; enough distinct observed domains for co-hosting to have teeth
    :asns 60})          ; infra breadth — one hosting cluster is not a picture of the world
