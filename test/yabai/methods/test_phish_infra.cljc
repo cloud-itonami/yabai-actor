@@ -285,6 +285,20 @@
                "70 of 94 candidates on one 2027 shard were exactly this: "
                (pr-str admitted))))))
 
+(deftest containment-never-spans-a-label-boundary
+  (testing "normalization must not invent a brand the registrant never wrote"
+    ;; All measured on the 36k-entry tick of 2026-07-29. `sni.cloudflaressl` normalizes to
+    ;; `snicloudflaressl`, which contains `icloud` purely because the dot was stripped —
+    ;; that admitted every Cloudflare universal-SSL hostname in the slice.
+    (is (nil? (p/lexical-hit "031064e8.sni.cloudflaressl.com")))
+    (is (nil? (p/lexical-hit "0b2c1daf.prod-eu1.ca.ai.cloud.sap")))
+    (is (nil? (p/lexical-hit "x.sni.cloud.example"))))
+  (testing "containment WITHIN one label is still a hit"
+    ;; The separator-stripping exists for `mast-crade`; removing it entirely would be the
+    ;; opposite error, so a hyphen inside a single label must still normalize away.
+    (is (some? (p/lexical-hit "supportaccount-signinamazoncom.154-198-163-150.cpanel.site")))
+    (is (some? (p/lexical-hit "buscar-appleid-help.info")))))
+
 (deftest subdomain-impersonation-still-caught
   (testing "suffix-matching the home list must not swallow a brand name used as a subdomain"
     ;; Both found live on the same tick that surfaced the noise above. `umadb.ro` and
