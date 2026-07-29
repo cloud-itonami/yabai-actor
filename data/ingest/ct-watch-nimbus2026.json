@@ -1,5 +1,6 @@
 [
  {"domain": "septembertheline.com", "observed": "2026-07-29", "ip": "23.227.38.32", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "CA"},
+ {"domain": "beveragesonline.com.au", "observed": "2026-07-29", "ip": "23.227.38.32", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "CA"},
  {"domain": "www.avacline.com", "observed": "2026-07-29", "ip": "198.185.159.145", "asn": 53831, "asn_org": "SQUARESPACE - Squarespace, Inc., US", "asn_country": "US"},
  {"domain": "claudehotline.top", "observed": "2026-07-29"},
  {"domain": "autocityonline.com", "observed": "2026-07-29", "ip": "34.247.213.32", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
@@ -17,6 +18,7 @@
  {"domain": "www.facebook-login20award2063.com.ph", "observed": "2026-07-29", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
  {"domain": "triplelineamazon.info", "observed": "2026-07-29", "ip": "104.21.78.109", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "www.facebooklogintrade-experthub.com.ph", "observed": "2026-07-29", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
+ {"domain": "online.sbsjjsumut.com", "observed": "2026-07-29", "ip": "2.58.201.30", "asn": 152586, "asn_org": "KUROIT-AS-AP - Kuroit, IN", "asn_country": "DE"},
  {"domain": "instavar.com", "observed": "2026-07-29", "ip": "76.76.21.21", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "f10f9986.sni.cloudflaressl.com", "observed": "2026-07-28", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "m.ww7.topbeautyonline.com", "observed": "2026-07-29", "ip": "172.237.146.18", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},

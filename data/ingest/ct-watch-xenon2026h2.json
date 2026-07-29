@@ -1,6 +1,7 @@
 [
  {"domain": "remoteviewer.prod.netflix.net", "observed": "2026-07-29", "ip": "34.218.19.240", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "pop.draalineginecologista.com.br", "observed": "2026-07-29", "ip": "186.226.60.198", "asn": 262954, "asn_org": "AS262954 - VirtuaServer Informatica Ltda, BR", "asn_country": "BR"},
+ {"domain": "coinbag.pro", "observed": "2026-07-29", "ip": "172.67.172.10", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "3015b5d0.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "ftp.draalineginecologista.com.br", "observed": "2026-07-29", "ip": "186.226.60.198", "asn": 262954, "asn_org": "AS262954 - VirtuaServer Informatica Ltda, BR", "asn_country": "BR"},
  {"domain": "airlinedatingservice.com", "observed": "2026-07-29", "ip": "172.67.149.183", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
@@ -18,11 +19,14 @@
  {"domain": "education-line.pages.dev", "observed": "2026-07-28", "ip": "172.66.44.133", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "www.draalineginecologista.com.br", "observed": "2026-07-29", "ip": "186.226.60.198", "asn": 262954, "asn_org": "AS262954 - VirtuaServer Informatica Ltda, BR", "asn_country": "BR"},
  {"domain": "onlinecasinotexas.us", "observed": "2026-07-29", "ip": "172.67.140.101", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
+ {"domain": "f5f9a143.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "onlinematched1754666459.zendesk.com", "observed": "2026-07-28", "ip": "216.198.53.12", "asn": 209242, "asn_org": "CLOUDFLARESPECTRUM - Cloudflare London, LLC, US", "asn_country": "US"},
  {"domain": "microsoft.masihnonamanis.online", "observed": "2026-07-29", "ip": "213.210.57.100", "asn": 47583, "asn_org": "AS-HOSTINGER - Hostinger International Limited, CY", "asn_country": "GB"},
  {"domain": "43dd951b.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "104.20.24.198", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "www.goldexpress.online.azlegalservice.com", "observed": "2026-07-28", "ip": "131.153.147.186", "asn": 19437, "asn_org": "SS-ASH - SECURED SERVERS LLC, US", "asn_country": "US"},
  {"domain": "draalineginecologista.com.br", "observed": "2026-07-29", "ip": "186.226.60.198", "asn": 262954, "asn_org": "AS262954 - VirtuaServer Informatica Ltda, BR", "asn_country": "BR"},
+ {"domain": "amitriptyline-hcl.in.net", "observed": "2026-07-29"},
+ {"domain": "focuscentralonline.co.uk", "observed": "2026-07-29", "ip": "172.67.187.236", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "mail.draalineginecologista.com.br", "observed": "2026-07-29", "ip": "186.226.60.198", "asn": 262954, "asn_org": "AS262954 - VirtuaServer Informatica Ltda, BR", "asn_country": "BR"},
  {"domain": "glbasm-t7-g.portal.hospitalonline.de", "observed": "2026-07-29", "ip": "64.190.63.222", "asn": 47846, "asn_org": "SEDO-AS - SEDO GmbH, DE", "asn_country": "DE"},
  {"domain": "wmy8r.creoline.cloud", "observed": "2026-07-29", "ip": "5.1.78.85", "asn": 205948, "asn_org": "CREOLINE-AS - creoline GmbH, DE", "asn_country": "DE"},
@@ -30,6 +34,7 @@
  {"domain": "dda38291.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "orangelinetrailers.com", "observed": "2026-07-29", "ip": "172.67.184.64", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "master-cash.com", "observed": "2026-07-29", "ip": "52.40.42.113", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "76b0afea.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "amz-os.com", "observed": "2026-07-29", "ip": "216.239.32.21", "asn": 15169, "asn_org": "GOOGLE - Google LLC, US", "asn_country": "US"},
  {"domain": "4313bbb3.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "104.20.24.198", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"}
 ]
