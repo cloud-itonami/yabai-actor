@@ -332,11 +332,23 @@
                                                    "}"))
                                             folded))
                              "\n]\n")))
+       ;; `:history` exists so the maturity score can compute a RATE without reading a
+       ;; clock. Each tick appends (epoch-ms, head, cursor); two points are enough to
+       ;; divide issuance by consumption. `:last` alone cannot support this — it carries a
+       ;; date, and a date cannot express "the head moved 2.3M entries while we took 333".
+       ;; Bounded at 96 samples (~4 days hourly): long enough to survive a quiet night,
+       ;; short enough that the state file stays a cursor rather than a time series.
        (write-state! (-> state
                          (assoc-in [:cursors log] next)
                          (assoc-in [:last log] {:at observed :tree-size size
                                                 :consumed consumed :names (count names)
-                                                :candidates (count candidates)})))
+                                                :candidates (count candidates)})
+                         (update-in [:history log]
+                                    (fn [h]
+                                      (->> (conj (vec h) {:t (System/currentTimeMillis)
+                                                          :head size :cursor next})
+                                           (take-last 96)
+                                           vec)))))
        {:log log :tree-size size :from cursor :to next :entries-consumed consumed
         :names (count names) :distinct-names (count (distinct (keep normalize-fqdn names)))
         :candidates (count candidates)

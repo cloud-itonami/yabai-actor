@@ -114,6 +114,41 @@
 
 (defn- ratio [n target] (min 1.0 (/ (double (max 0 n)) (double target))))
 
+(defn issuance-coverage
+  "What fraction of the world's certificate issuance this watch actually consumes.
+
+  Every other dimension here measures OUR PILE — how many brands we listed, how many
+  domains we accumulated. None of them can see the watch losing a race. Measured
+  2026-07-29: the six cursors sat 29,206,861 entries behind their heads while the tick
+  consumed 1,998 entries/hour, and argon2026h2's head alone advanced ~2.3M entries in the
+  time we took 333 from it. Every pile-counting dimension read that as progress, because
+  the pile was in fact growing. A score that cannot see a three-order-of-magnitude deficit
+  is not measuring maturity, and an agent optimizing it would never be pushed to close one.
+
+  So: consumption rate / issuance rate, summed across shards, from the `:history` samples
+  ct-watch appends each tick. No clock is read here — the timestamps are data.
+
+  Returns nil when fewer than two samples exist for every shard. nil is not zero: `score`
+  drops the dimension and says so, because inventing a number for something never measured
+  is the failure this whole dimension exists to catch."
+  [state]
+  (let [spans (for [[_log h] (:history state)
+                    :let [h (vec h)]
+                    :when (>= (count h) 2)
+                    :let [a (first h) b (peek h)
+                          dt (- (:t b) (:t a))]
+                    :when (pos? dt)]
+                {:issued (max 0 (- (:head b) (:head a)))
+                 :consumed (max 0 (- (:cursor b) (:cursor a)))})
+        issued (reduce + 0 (map :issued spans))
+        consumed (reduce + 0 (map :consumed spans))]
+    (cond
+      (empty? spans) nil
+      ;; A head that never moved means the logs went quiet, not that we achieved coverage.
+      ;; Claiming 1.0 here would let a dead upstream look like a solved problem.
+      (zero? issued) nil
+      :else (min 1.0 (/ (double consumed) (double issued))))))
+
 (defn dimensions
   "Five 0..1 readings from repo state. `graph` is the merged CTI rows, `state` the ct-watch
   cursor map. Pure — callers do the I/O."
@@ -131,6 +166,7 @@
                           count)]
     {:brand-coverage (ratio (count phish/default-brands) (:brands targets))
      :log-coverage (ratio (count (keys (:cursors state))) (:logs targets))
+     :issuance-coverage (issuance-coverage state)
      :observation-volume (ratio (count domains) (:observations targets))
      :infra-breadth (ratio asns (:asns targets))
      :signal-independence (if (zero? (count phishing))
@@ -138,26 +174,49 @@
                             (double (/ corroborated (count phishing))))}))
 
 (def weights
-  "Coverage dominates on purpose: the watch's binding limit is what it can SEE (five
-  hand-written brands, one CT shard), not how it decides once it sees something."
-  {:brand-coverage 0.30
-   :log-coverage 0.25
-   :observation-volume 0.20
-   :infra-breadth 0.15
-   :signal-independence 0.10})
+  "Coverage dominates on purpose: the watch's binding limit is what it can SEE, not how it
+  decides once it sees something.
+
+  Rebalanced 2026-07-29 to seat `:issuance-coverage` as the joint-heaviest term and to cut
+  `:observation-volume` in half. Volume was the most flattering dimension and the least
+  informative: it rises whenever the tick runs at all, so it read a watch falling three
+  orders of magnitude behind the firehose as steady progress. Counting what we hold is
+  worth something; it is not worth as much as whether we are keeping up."
+  {:brand-coverage 0.25
+   :log-coverage 0.20
+   :issuance-coverage 0.25
+   :observation-volume 0.10
+   :infra-breadth 0.12
+   :signal-independence 0.08})
 
 (defn score
   "0..1000, or 0 when a floor is broken. Returns the full reading, not just the number —
   a score with no breakdown cannot be argued with."
   [graph state floors]
   (let [dims (dimensions graph state)
-        raw (reduce-kv (fn [acc k w] (+ acc (* w (get dims k 0.0)))) 0.0 weights)]
-    {:maturity/score (if (:ok floors) (long (Math/round (* 1000.0 raw))) 0)
-     :maturity/valid (:ok floors)
-     :maturity/dimensions (into {} (map (fn [[k v]] [k (/ (Math/round (* 1000.0 v)) 1000.0)]) dims))
-     :maturity/weights weights
-     :maturity/targets targets
-     :maturity/floors (select-keys floors [:benign-claims :missed-impersonations :ok])}))
+        ;; A dimension that could not be measured is dropped and its weight renormalized
+        ;; away, NOT scored as zero and NOT scored as one. Zero would punish a fresh clone
+        ;; for having no history yet; one would let "never measured" masquerade as
+        ;; "perfect". Either way the caller is owed the list, so `:incomplete` names every
+        ;; dropped dimension and the score is explicitly out of the weight that remained.
+        measured (into {} (remove (fn [[_ v]] (nil? v)) dims))
+        incomplete (vec (sort (remove (set (keys measured)) (keys dims))))
+        live-weight (reduce + 0.0 (map weights (keys measured)))
+        raw (if (pos? live-weight)
+              (/ (reduce-kv (fn [acc k w] (+ acc (* w (get measured k 0.0)))) 0.0
+                            (select-keys weights (keys measured)))
+                 live-weight)
+              0.0)
+        r3 (fn [v] (/ (Math/round (* 1000.0 (double v))) 1000.0))]
+    (cond-> {:maturity/score (if (:ok floors) (long (Math/round (* 1000.0 raw))) 0)
+             :maturity/valid (:ok floors)
+             :maturity/dimensions (into {} (map (fn [[k v]] [k (r3 v)]) measured))
+             :maturity/weights weights
+             :maturity/targets targets
+             :maturity/floors (select-keys floors [:benign-claims :missed-impersonations :ok])}
+      (seq incomplete)
+      (assoc :maturity/incomplete incomplete
+             :maturity/scored-out-of (r3 live-weight)))))
 
 (defn render
   "Human-readable reading. Deliberately states WHY the score is what it is."
@@ -210,6 +269,10 @@
      [& _]
      (let [r (measure!)]
        (println (pr-str (select-keys r [:maturity/score :maturity/valid :maturity/dimensions])))
+       (when-let [inc* (seq (:maturity/incomplete r))]
+         (println (str "NOT MEASURED: " (str/join ", " (map name inc*))
+                       " — score is out of " (:maturity/scored-out-of r)
+                       " of the weight, not 1.0. Treat it as provisional.")))
        (when-not (:maturity/valid r)
          (println "FLOOR BROKEN:" (pr-str (:maturity/floors r)))
          (System/exit 1))
