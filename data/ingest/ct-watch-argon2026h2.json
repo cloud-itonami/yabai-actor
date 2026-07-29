@@ -120,6 +120,7 @@
  {"domain": "direwolf-d7ea7e3480-1cbd711d8cef.apple-virginia.herokuapp.com", "observed": "2026-07-28", "ip": "99.86.195.20", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "api-brugge-rp.archiefonline.be", "observed": "2026-07-28", "ip": "93.94.107.244", "asn": 44806, "asn_org": "KINAMO-BACKBONE - Kinamo N.V., BE", "asn_country": "BE"},
  {"domain": "www.autobeschriftung-online-gestalten.ch", "observed": "2026-07-28", "ip": "185.101.158.113", "asn": 207143, "asn_org": "hosttech-AS - hosttech GmbH, CH", "asn_country": "CH"},
+ {"domain": "dev.950314370536ap-northeast-1.vpce.amazonmap.medellin.onl", "observed": "2026-07-29", "ip": "38.102.126.242", "asn": 26832, "asn_org": "RICAWEBSERVICES - Rica Web Services, CA", "asn_country": "US"},
  {"domain": "blog.950314370536ap-northeast-1.vpce.amazonmap.medellin.onl", "observed": "2026-07-29", "ip": "38.102.126.242", "asn": 26832, "asn_org": "RICAWEBSERVICES - Rica Web Services, CA", "asn_country": "US"},
  {"domain": "6www.wwwnecoonlinerebat2.bugs-proxy.500apps.org", "observed": "2026-07-28", "ip": "18.139.165.22", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "app.leafbeta.com", "observed": "2026-07-28", "ip": "204.11.56.48", "asn": 40034, "asn_org": "CONFLUENCE-NETWORK-INC - Confluence Networks Inc, VG", "asn_country": "VG"},
