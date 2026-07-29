@@ -2,5 +2,8 @@
  {"domain": "instagram.novu.eu", "observed": "2026-07-28", "ip": "3.33.251.168", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "www.onlineinfra.xyz", "observed": "2026-07-28", "ip": "13.248.169.48", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "streemliner.com", "observed": "2026-07-29", "ip": "142.93.39.162", "asn": 14061, "asn_org": "DIGITALOCEAN-ASN - DigitalOcean, LLC, US", "asn_country": "US"},
- {"domain": "www.streemliner.com", "observed": "2026-07-29", "ip": "142.93.39.162", "asn": 14061, "asn_org": "DIGITALOCEAN-ASN - DigitalOcean, LLC, US", "asn_country": "US"}
+ {"domain": "www.streemliner.com", "observed": "2026-07-29", "ip": "142.93.39.162", "asn": 14061, "asn_org": "DIGITALOCEAN-ASN - DigitalOcean, LLC, US", "asn_country": "US"},
+ {"domain": "dielineawards.net", "observed": "2026-07-29", "ip": "3.33.251.168", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "pz8n7xkf123b9ha3eq664maxh4nyv.eu-central-1.amazongamelift.com", "observed": "2026-07-29"},
+ {"domain": "www.dielineawards.net", "observed": "2026-07-29", "ip": "3.33.251.168", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"}
 ]
