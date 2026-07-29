@@ -64,8 +64,13 @@
          holds 2.21e9 entries while nimbus2026 alone holds another 5.68e9. -->
     <key>YABAI_CT_LOG</key>
     <string>all</string>
+    <!-- 36,000/tick = 6,000 per shard. The old 2,000 was not a choice: collect-names!
+         guarded at 64 requests and argon returns ~32 entries each, so a tick physically
+         could not exceed ~2,019 per shard whatever this said. With that cap lifted and the
+         shards fetched concurrently, a full six-shard tick measured 278s wall — comfortably
+         inside the hourly interval, and 18x the entries the watch used to see. -->
     <key>YABAI_CT_ENTRIES</key>
-    <string>2000</string>
+    <string>36000</string>
   </dict>
 
   <key>StartInterval</key>
