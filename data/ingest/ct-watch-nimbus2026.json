@@ -1,5 +1,9 @@
 [
  {"domain": "c7b5834d.sni.cloudflaressl.com", "observed": "2026-07-28", "ip": "104.20.24.198", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "f10f9986.sni.cloudflaressl.com", "observed": "2026-07-28", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
- {"domain": "facebook-help-like-ads.ph", "observed": "2026-07-28", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"}
+ {"domain": "facebook-help-like-ads.ph", "observed": "2026-07-28", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
+ {"domain": "microsoft.com.244778543667.umadb.ro", "observed": "2026-07-28", "ip": "104.225.208.27", "asn": 46505, "asn_org": "NIXIHOST - NixiHost.com Incorporated, US", "asn_country": "US"},
+ {"domain": "onlinemou.com", "observed": "2026-07-28", "ip": "203.170.190.140", "asn": 9891, "asn_org": "CSLOX-IDC-AS-AP - CS LOXINFO Public Company Limited., TH", "asn_country": "TH"},
+ {"domain": "www.microsoft.com.244778543667.umadb.ro", "observed": "2026-07-28", "ip": "104.225.208.27", "asn": 46505, "asn_org": "NIXIHOST - NixiHost.com Incorporated, US", "asn_country": "US"},
+ {"domain": "www.sidelines.ca", "observed": "2026-07-28", "ip": "23.227.38.32", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "CA"}
 ]
