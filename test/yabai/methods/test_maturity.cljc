@@ -126,6 +126,46 @@
     (is (re-find #"DO NOT EDIT BY HAND" txt))
     (is (re-find #"COVERAGE" txt) "the file states how to raise it honestly")))
 
+;; ── issuance coverage ───────────────────────────────────────────────────────
+;; Numbers below are the real 2026-07-29 measurement: heads advancing ~2.3M/hour against
+;; a 333/hour consumption, which is the condition every other dimension read as progress.
+(defn- hist [& samples] {:history {"argon2026h2" (vec samples)}})
+
+(deftest issuance-coverage-measures-the-race-not-the-pile
+  (testing "consumption over issuance, not observations accumulated"
+    (is (= 0.5 (m/issuance-coverage (hist {:t 0 :head 1000 :cursor 0}
+                                          {:t 3600000 :head 2000 :cursor 500})))))
+  (testing "keeping up reads 1.0, and overshoot cannot exceed it"
+    (is (= 1.0 (m/issuance-coverage (hist {:t 0 :head 1000 :cursor 0}
+                                          {:t 3600000 :head 2000 :cursor 5000})))))
+  (testing "the real reading is a rounding error away from zero, and must say so"
+    (let [c (m/issuance-coverage (hist {:t 0 :head 2213173502 :cursor 2204353586}
+                                       {:t 3600000 :head 2215486171 :cursor 2204356918}))]
+      (is (< c 0.01) (str "measured " c " — a watch this far behind must not read as mature")))))
+
+(deftest unmeasurable-coverage-is-nil-never-a-number
+  (testing "a single sample cannot yield a rate"
+    (is (nil? (m/issuance-coverage (hist {:t 0 :head 1000 :cursor 0}))))
+    (is (nil? (m/issuance-coverage {}))))
+  (testing "a quiet upstream is not achieved coverage"
+    ;; If the head stops moving, consumed/issued would divide by zero — and any fallback
+    ;; that returns 1.0 would let a dead log list look like a solved problem.
+    (is (nil? (m/issuance-coverage (hist {:t 0 :head 1000 :cursor 0}
+                                         {:t 3600000 :head 1000 :cursor 0}))))))
+
+(deftest unmeasured-dimensions-are-dropped-and-declared
+  (let [floors {:ok true :benign-claims [] :missed-impersonations []}
+        r (m/score [] {:cursors {"argon2026h2" 1}} floors)]
+    (testing "nil dimension is neither scored as 0 nor as 1"
+      (is (not (contains? (:maturity/dimensions r) :issuance-coverage)))
+      (is (= [:issuance-coverage] (:maturity/incomplete r)))
+      (is (< (:maturity/scored-out-of r) 1.0)
+          "the caller must be able to see the score is out of partial weight"))
+    (testing "renormalization, so a missing dimension does not silently deflate the score"
+      ;; log-coverage 1/12 is the only non-zero measured dimension here; the score must be
+      ;; that reading against the weight that actually applied, not against 1.0.
+      (is (pos? (:maturity/score r))))))
+
 #?(:clj
    (when (= *file* (System/getProperty "babashka.file"))
      (let [{:keys [fail error]} (run-tests 'yabai.methods.test-maturity)]
