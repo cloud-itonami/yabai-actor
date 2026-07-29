@@ -87,8 +87,8 @@
          {:brand "rakuten"    :seen :corpus :home #{"rakuten.co.jp" "rakuten.com" "rakuten-card.co.jp" "rakuten.jp" "r10s.jp"}}
          {:brand "google"     :seen :corpus :home #{"google.com" "google.co.jp" "googlemail.com" "workspace.google.com" "googleapis.com" "gstatic.com" "googleusercontent.com" "goo.gl" "withgoogle.com"}}
          ;; ── coverage: known phishing targets, not yet observed here ──────────
-         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp" "amazonaws.com" "awsstatic.com" "aws.amazon.com" "amazon.dev"}}
-         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com" "microsoftonline.com" "azure.com" "azure.net" "windows.net" "office.com" "sharepoint.com" "azureedge.net"}}
+         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp" "amazonaws.com" "amazonaws.com.cn" "amazonaws.eu" "awsstatic.com" "aws.amazon.com" "amazon.dev"}}
+         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com" "microsoftonline.com" "microsoft-int.com" "azure.com" "azure.net" "windows.net" "office.com" "sharepoint.com" "azureedge.net"}}
          {:brand "paypal"     :seen :target :home #{"paypal.com" "paypal.co.jp" "paypal.me" "paypalobjects.com"}}
          {:brand "netflix"    :seen :target :home #{"netflix.com" "netflix.co.jp" "nflxvideo.net" "nflximg.net" "nflxext.com"}}
          {:brand "instagram"  :seen :target :home #{"instagram.com" "cdninstagram.com"}}
@@ -224,8 +224,19 @@
          ;; endpoints and MSK brokers — Amazon's own certificates, admitted because
          ;; `amazonaws` starts with `amazon` and exact-fqdn home matching could not see it.
          ;; That is a 38% prefilter admission rate on names that can never become a claim.
-         rd (registrable-domain fq)
-         home? (some (fn [b] (let [h (or (:home b) #{})] (or (h fq) (h rd)))) brands)]
+         ;;
+         ;; Match on any dot-SUFFIX rather than the registrable domain alone. Regional and
+         ;; internal estates do not share a registrable domain with the brand's main one, so
+         ;; rd matching cannot reach them: measured 2026-07-29 on the first six-shard tick,
+         ;; `s3.cn-north-1.amazonaws.com.cn` has rd `amazonaws.com.cn` and
+         ;; `z30.w.api.fabric.microsoft-int.com` has rd `microsoft-int.com` — neither is the
+         ;; brand's flagship domain, both are unmistakably the brand's own infrastructure,
+         ;; and together they were 70 of 94 candidates on one shard. Suffix matching means a
+         ;; single home entry covers a whole estate at any depth, so the allowlist below
+         ;; stays a list of estates rather than a list of hostnames.
+         suffixes (let [parts (str/split fq #"\.")]
+                    (map #(str/join "." (drop % parts)) (range (count parts))))
+         home? (some (fn [b] (let [h (or (:home b) #{})] (some h suffixes))) brands)]
      (->> (if home? [] brands)
           (keep (fn [{:keys [brand max-edits]}]
                   (let [d (osa-distance label brand)]

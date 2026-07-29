@@ -264,6 +264,36 @@
                     vec)]
     (is (= [] missed) (str "missed: " (pr-str missed)))))
 
+;; Drawn verbatim from the first six-shard tick (2026-07-29). The point of keeping real
+;; names here rather than synthetic ones is that the prefilter's cost is paid in DNS
+;; lookups against whatever the world actually issues certificates for, and the world
+;; issues a great many certificates for the brands' own regional estates.
+(def ^:private brand-owned-infrastructure
+  ["s3.cn-north-1.amazonaws.com.cn"
+   "accesspoint.vpce-010eefc1e7a3029cf-79tc246b-cn-north-1a.s3.cn-north-1.vpce.amazonaws.com.cn"
+   "s3-control.eusc-de-east-1.amazonaws.eu"
+   "olmguysms3crpcye5kmx1lvuyrt.memorydb.cn-north-1.amazonaws.com.cn"
+   "z30.w.api.fabric.microsoft-int.com"
+   "auto-s1216683mi6-pbi-kv-httpszone71.z71.w.api.fabric.microsoft-int.com"
+   "zce.userdatafunctions.fabric.microsoft-int.com"])
+
+(deftest brand-estates-are-out-of-scope-at-any-depth
+  (testing "a brand's own regional/internal infrastructure never reaches the network stage"
+    (let [admitted (filterv #(some? (p/lexical-hit %)) brand-owned-infrastructure)]
+      (is (= [] admitted)
+          (str "these are the brand's OWN certificates and can never become a claim; "
+               "70 of 94 candidates on one 2027 shard were exactly this: "
+               (pr-str admitted))))))
+
+(deftest subdomain-impersonation-still-caught
+  (testing "suffix-matching the home list must not swallow a brand name used as a subdomain"
+    ;; Both found live on the same tick that surfaced the noise above. `umadb.ro` and
+    ;; `novu.eu` are not brand estates — the brand token sits to the LEFT of a registrable
+    ;; domain that belongs to someone else, which is the impersonation, not an exemption.
+    (is (some? (p/lexical-hit "microsoft.com.244778543667.umadb.ro")))
+    (is (some? (p/lexical-hit "www.microsoft.com.244778543667.umadb.ro")))
+    (is (some? (p/lexical-hit "instagram.novu.eu")))))
+
 #?(:clj
    (when (= *file* (System/getProperty "babashka.file"))
      (let [{:keys [fail error]} (run-tests 'yabai.methods.test-phish-infra)]
