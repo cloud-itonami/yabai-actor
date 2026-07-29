@@ -12,12 +12,12 @@
                 "adr-2607132300-design-quality-score"],
   :adr/supersedes [],
   :adr/superseded_by [],
-  :adr/repos ["etzhayyim/com-etzhayyim-yabai" "etzhayyim/tamaki"],
+  :adr/repos ["cloud-itonami/yabai-actor" "etzhayyim/tamaki"],
   :adr/authoritative true,
-  :adr/authoritative_for ["phishing watch の成熟度指標の定義（floors + 5 dimensions + weights + targets）とその anti-gaming 性質"
+  :adr/authoritative_for ["phishing watch の成熟度指標の定義（floors + 6 dimensions + weights + targets）とその anti-gaming 性質"
                           "自律ループが最適化してよい数値がこの score であること"
                           "tick が GitHub と radicle の両プレーンへ成長を流すこと"],
-  :adr/last_verified "2026-07-28",
+  :adr/last_verified "2026-07-29",
   :adr/body "# ADR-0005: fitness function と radicle ミラー
 
 ## Status
@@ -52,18 +52,52 @@ tap-target min-height 欠如・dvh フォールバック欠如・safe-area 片�
 **FLOORS（pass/fail 不変条件）** — benign 36 件が claim ゼロ、明白な偽装 7 件が取りこぼしゼロ。
 **どれか一つでも破れたら score は 0、reading は `:invalid`。**
 
-**GRADIENT（0..1 の 5 次元）** — 実際の改善だけが動かす:
+**GRADIENT（0..1、現在 6 次元）** — 実際の改善だけが動かす:
 
-| dimension | weight | target | 現在 |
+| dimension | weight | target | 初回(07-28) |
 |---|---|---|---|
-| `:brand-coverage` | 0.30 | 25 brands | 0.200（5 件） |
-| `:log-coverage` | 0.25 | 6 shards | 0.167（1 shard） |
-| `:observation-volume` | 0.20 | 2000 domains | 0.111 |
-| `:infra-breadth` | 0.15 | 60 ASNs | 0.317 |
-| `:signal-independence` | 0.10 | — | 0.597 |
+| `:brand-coverage` | 0.25 | 50 brands | 0.200（5 件） |
+| `:log-coverage` | 0.20 | 12 shards | 0.167（1 shard） |
+| **`:issuance-coverage`** | **0.25** | 消費/発行 = 1.0 | （07-29 追加） |
+| `:observation-volume` | 0.10 | 2000 domains | 0.111 |
+| `:infra-breadth` | 0.12 | 60 ASNs | 0.317 |
+| `:signal-independence` | 0.08 | — | 0.597 |
 
 **初回計測 = 231/1000。** coverage に重みを寄せたのは意図的で、この watch の律速は
 「どう判定するか」ではなく**何が見えているか**（手書き 5 ブランド・1 shard）だから。
+
+### 改訂 2026-07-29 — 初版は「山の大きさ」を測っており、負けているレースを見られなかった
+
+初版の 5 次元はすべて **自分が貯めたもの**（brand 数・domain 数・ASN 数）を数えていた。
+これは致命的な盲点だった。実測: 6 cursor が head から **29,206,861 entries 遅れ**、
+消費は **1,998 entries/時**、argon2026h2 の head だけで私が 333 取る間に約 230 万進む。
+山自体は毎時育つので、**全次元がこれを「前進」と読み**、score は 508/1000 に達しながら
+実カバレッジは発行量の 0.1% 台だった。
+
+**動かすべきものを動かしても動かない指標は、指標が無いより悪い** — それを最適化する
+agent は永久に同じ細流を汲み続け、最大の欠陥には決して向かわない。
+
+`:issuance-coverage`（消費レート ÷ 発行レート）を **brand-coverage と同率で最重
+（0.25）** に据え、`:observation-volume` を 0.20 → 0.10 に半減した。volume は最も甘く
+（tick が走りさえすれば上がる）最も情報量の少ない項だったため。
+
+レートは tick が書く `:history`（epoch-ms・head・cursor、96 sample ≈ 4 日）から出す。
+**scoring 時に時計を読まない** — timestamp はデータであり、決定論性は保たれる。
+`:last` では代用できない（日付しか持たず、「head が 230 万進む間に 333 取った」を
+表現できない）。
+
+**この次元が嘘をつきうる 2 経路は塞ぎ、テストで固定した**:
+- **測れない時は `nil` を返す。0 でも 1 でもない。** `score` は当該次元を落として
+  残った weight で再正規化し、`:maturity/incomplete` と `:maturity/scored-out-of` を
+  報告する。0 は history を持たない新規 clone を罰し、1 は「一度も測っていない」を
+  「満点」に化けさせる——どちらも初版が避けようとした嘘そのもの。
+- **head が動かない時も `nil`。** ゼロ除算の fallback に 1.0 を返せば、
+  **死んだ upstream が「達成されたカバレッジ」に見える**。
+
+**この次元は当面 score を下げる方向に効く**（実カバレッジは 1% 未満）。下がることは
+退行ではなく、初版が見せていなかった現実である。同様に **CT log を増やすと
+`:issuance-coverage` は下がる**（発行量の分母が増える）——指標の欠陥ではなく正直な会計で、
+log-coverage と issuance-coverage が引っ張り合うのは設計どおり。
 
 ### 2. Anti-gaming をテストで証明する（主張しない）
 
@@ -98,6 +132,23 @@ data plane と同じ成長ログ性質を持つ。時計もネットワークも
 `actor.edn` に `:rad-rid` を追加し、`mirror-to-radicle!` が remote が無ければ作って push する。
 **radicle 到達不能は tick を落とさない**（GitHub に既に届いた発見を失う方が悪い）が、結果は
 握り潰さず報告する。手動 push で `cebe2b4..3507b72` を追いつかせ済み。
+
+**訂正 2026-07-29 — 「報告する」が実際には報告していなかった。** `mirror-to-radicle!` は
+push の成否を **stdout の grep**（`error|rejected|fatal`）で判定していたが、git は rejection も
+`fatal:` も **stderr** に書き、当時の `sh` は stderr と exit code を捨てていた。したがって
+**失敗した rad push は必ず `:pushed true` として記録された**。上の「radicle は登録だけで
+成長していなかった」という発見をした当の仕組みが、同じ嘘を別の場所で再生産していた。
+
+exit code で判定するよう修正（`sh*` が `{:out :err :exit}` を返す）した直後に、
+**本物の障害が出てきた**: 署名鍵が ssh-agent に登録されておらず
+（`Radicle key … is not registered; run rad auth`）、rad 側 main は `77be244` で
+GitHub `674fa52` から **4 commits 遅れ**。旧判定ではこれが毎時 `:pushed true` だった。
+
+**この identity（alias `junkawasaki`, `z6MkpPKis…`）の passphrase は kagi にも Keychain にも
+存在しない**（secrets-location-map 訂正済み — 従来「到達不能な別端末のもの」と書かれていたが
+実際にはこの Mac の `~/.radicle` にある。単に保管されていない）。安全床①により agent は
+passphrase を推測も入力もしないため、**オーナーが `rad auth` を実行するまで radicle 面の
+成長は止まったまま**。GitHub 面は無影響。
 
 ### 5. tamaki 側の接続
 
