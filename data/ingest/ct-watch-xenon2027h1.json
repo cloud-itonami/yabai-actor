@@ -9,6 +9,7 @@
  {"domain": "www.srimaruthiroadlines.com", "observed": "2026-07-29", "ip": "3.168.245.42", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "stager.ztna-default.prod.microsoftdelaware.us", "observed": "2026-07-29", "ip": "52.235.253.97", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
  {"domain": "mild365test2ee4f118ab7303e36devret.cloud.high.microsoftdynamics.us", "observed": "2026-07-28", "ip": "52.227.65.17", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
+ {"domain": "www.teamcaroline.ca", "observed": "2026-07-29", "ip": "3.33.130.190", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "bluelinesbus.com", "observed": "2026-07-29", "ip": "13.228.218.182", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "ciam-backoffice-us-eph15081.dcxcrg-dev.aws.pmicloud.biz", "observed": "2026-07-29", "ip": "54.230.175.61", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "mild365test2ee4f118ab7303e36devaossoap.cloud.high.microsoftdynamics.us", "observed": "2026-07-28", "ip": "52.227.65.17", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
@@ -21,10 +22,16 @@
  {"domain": "rcbroadlines.com", "observed": "2026-07-29", "ip": "13.228.218.182", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "kalpanaroadlines.com", "observed": "2026-07-29", "ip": "13.228.218.182", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "www.luxurylinetravels.com", "observed": "2026-07-29", "ip": "3.168.245.119", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "techline.zimaweb.com", "observed": "2026-07-29", "ip": "78.46.137.84"},
  {"domain": "mild365test2ee4f118ab7303e36devpos.cloud.high.microsoftdynamics.us", "observed": "2026-07-28", "ip": "52.227.65.17", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
  {"domain": "biscloud.com", "observed": "2026-07-29", "ip": "13.225.177.72", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "14.28.07.2026.google_xenon2027h1.flowers-to-the-world.com", "observed": "2026-07-29"},
  {"domain": "formlinesapi.fast.pintail.rocks", "observed": "2026-07-29"},
+ {"domain": "www.hessenbahn-online.de", "observed": "2026-07-29", "ip": "188.40.218.140", "asn": 24940, "asn_org": "HETZNER-AS - Hetzner Online GmbH, DE", "asn_country": "DE"},
+ {"domain": "hessenbahn-online.de", "observed": "2026-07-29", "ip": "188.40.218.140", "asn": 24940, "asn_org": "HETZNER-AS - Hetzner Online GmbH, DE", "asn_country": "DE"},
  {"domain": "dev-c3-linear-monitoring.paramountmsc.com", "observed": "2026-07-29", "ip": "23.34.103.144", "asn": 16625, "asn_org": "AKAMAI-AS - Akamai Technologies, Inc., US", "asn_country": "US"},
  {"domain": "www.vishalbusonline.com", "observed": "2026-07-29", "ip": "3.168.245.129", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
- {"domain": "mild365test2ee4f118ab7303e36deva.cloud.high.microsoftdynamics.us", "observed": "2026-07-28"}
+ {"domain": "mild365test2ee4f118ab7303e36deva.cloud.high.microsoftdynamics.us", "observed": "2026-07-28"},
+ {"domain": "gamingsonline.com", "observed": "2026-07-29", "ip": "15.197.225.128", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "www.eternaldiscipline.com", "observed": "2026-07-29", "ip": "3.33.130.190", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"}
 ]
