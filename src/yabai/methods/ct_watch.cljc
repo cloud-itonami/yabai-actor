@@ -132,11 +132,14 @@
      subprocess by grepping its stdout silently calls every failure a success. Measured
      2026-07-28: a non-fast-forward `git push` was reported as {:pushed true} and the tick
      exited 0 with the findings sitting in a local commit only."
-     [argv]
-     (let [p (-> (ProcessBuilder. ^java.util.List argv) .start)
-           out (slurp (.getInputStream p))
-           err (slurp (.getErrorStream p))]
-       {:out out :err err :exit (.waitFor p)})))
+     ([argv] (sh* argv nil))
+     ([argv dir]
+      (let [pb (ProcessBuilder. ^java.util.List argv)
+            _ (when dir (.directory pb (clojure.java.io/file dir)))
+            p (.start pb)
+            out (slurp (.getInputStream p))
+            err (slurp (.getErrorStream p))]
+        {:out out :err err :exit (.waitFor p)}))))
 
 #?(:clj
    (defn- sh
@@ -451,6 +454,147 @@
             :rad (mirror-to-radicle!)
             :note (str/trim (str (:out push) (:err push)))})))))
 
+;; ── fleet fan-out ───────────────────────────────────────────────────────────
+(def remote-src-dir
+  "Where the collector is staged on a fleet node. Not the repo: fleet nodes have no
+  checkout, and the previous `--plan` emitted `cd <local repo-root> && bb -cp src`, a path
+  that exists on the operator's laptop and nowhere else — which is why that batch had never
+  been executed once in the life of this actor. It was a preview of a doomed command."
+  "/tmp/yabai-src")
+
+(defn fanout-batch
+  "murakumo task specs covering `slices-per-log` slices of `per-slice` entries on each log,
+  taken AHEAD of each stored cursor so the fleet widens coverage instead of re-reading what
+  the resident tick already consumed. Pure: builds the batch, runs nothing.
+
+  Each task returns only what survives the PURE prefilter. That is the whole economy of
+  this design — measured 2026-07-29, 26,000 entries yielded 55,708 SAN names remotely and
+  sent 173 names home. The firehose never crosses the network; DNS enrichment and scoring
+  stay local, where the corpus is."
+  [state logs slices-per-log per-slice]
+  {:tasks
+   (vec (for [log (sort logs)
+              i (range slices-per-log)
+              :let [cur (get-in state [:cursors log] 0)
+                    ;; skip the band the resident tick is working through
+                    start (+ cur (* per-slice (inc slices-per-log)) (* i per-slice))]]
+          {:id (str "ct-" log "-" i)
+           :cmd (str "bb -cp " remote-src-dir " -e "
+                     "\"(require (quote [yabai.methods.ct-watch :as w])) "
+                     "(let [u (get w/ct-logs \\\"" log "\\\") "
+                     "r (w/collect-names! u " start " " per-slice ")] "
+                     "(prn {:log \\\"" log "\\\" :start " start
+                     " :consumed (:consumed r) :names (count (:names r)) "
+                     ":candidates (w/interesting-names (:names r))}))\"")}))})
+
+#?(:clj
+   (defn fanout!
+     "Stage the collector on the fleet, run the batch, fold the harvest into the corpus.
+
+     Politeness is a design constraint, not a tuning knob: `--slots 1` keeps ONE in-flight
+     request per node. CT logs are public infrastructure run as a public good, and the
+     temptation here is to treat them as a throughput problem. Raising fleet-wide request
+     rate against Google/Cloudflare endpoints is an operator's decision, so it is spelled
+     out rather than buried in a default.
+
+     Partial failure is normal and is reported, never smoothed over: nodes go unreachable
+     and tools go missing. The run succeeds on whatever answered."
+     [{:keys [logs slices-per-log per-slice nodes score? commit?]}]
+     ;; Resolve murakumo by finding its entrypoint, not by assuming a directory layout.
+     ;; Deriving it from repo-root's grandparent works in the west checkout and produces a
+     ;; path under the scratchpad when this runs from a worktree — which is where it was
+     ;; first tried. A wrong path must fail loudly with the candidates listed, never leave
+     ;; the caller guessing why no task was placed.
+     (let [candidates (keep identity
+                            [(System/getenv "MURAKUMO_ROOT")
+                             (str (.getParentFile (.getParentFile repo-root))
+                                  "/kotoba-lang/murakumo")
+                             (str (System/getProperty "user.home")
+                                  "/github/com-junkawasaki/orgs/kotoba-lang/murakumo")])
+           murakumo (or (first (filter #(.exists (clojure.java.io/file % "scripts/run-task.cljs"))
+                                       candidates))
+                        (throw (ex-info "murakumo entrypoint not found — set MURAKUMO_ROOT"
+                                        {:tried (vec candidates)})))
+           nodes (or (seq nodes)
+                     ;; default to whatever the fleet probe can actually reach
+                     (->> (:out (sh* ["nbb" (str murakumo "/scripts/run-task.cljs")
+                                      "task" "probe" "--format" "edn"]))
+                          (re-seq #":node\s+\"([a-z0-9-]+)\"[^}]*?:ssh\s+:up")
+                          (map second) distinct))
+           batch (fanout-batch (read-state) logs slices-per-log per-slice)
+           batch-file (str (java.io.File/createTempFile "ct-fanout" ".edn"))
+           staged (doall
+                   (pmap (fn [n]
+                           [n (zero? (:exit (sh* ["rsync" "-az" "--delete"
+                                                  (str repo-root "/src/")
+                                                  (str n ":" remote-src-dir "/")])))])
+                         nodes))
+           ready (mapv first (filter second staged))]
+       (spit batch-file (pr-str batch))
+       (if (empty? ready)
+         {:ok false :note "no node could be staged" :staged staged}
+         ;; cwd MUST be the murakumo root: `task run` resolves --fleet fleet.edn and its
+         ;; ledger relative to cwd, so invoking it from here silently placed nothing. The
+         ;; first version of this reported {:ok true, :attempts 0} — a fan-out that ran no
+         ;; tasks at all, described as a success, which is the exact defect this file has
+         ;; been chasing all day.
+         (let [r (sh* ["nbb" "scripts/run-task.cljs" "task" "run"
+                       "--tasks" batch-file "--nodes" (str/join "," ready)
+                       "--slots" "1" "--timeout-ms" "300000" "--format" "edn"]
+                      murakumo)
+               results (try (:run/results (clojure.edn/read-string (:out r))) (catch Exception _ nil))
+               ok (filter #(zero? (or (:exit %) 1)) results)
+               parsed (keep (fn [t] (try (clojure.edn/read-string (str/trim (str (:stdout t))))
+                                         (catch Exception _ nil)))
+                            ok)
+               cands (vec (sort (distinct (mapcat :candidates parsed))))
+               ;; A batch that placed nothing is a FAILURE, however cleanly it returned.
+               ;; Reporting :ok on zero attempts would make a broken fleet path
+               ;; indistinguishable from a quiet one, and the murakumo stderr is the only
+               ;; thing that explains which — so it travels with the verdict.
+               summary {:ok (pos? (count ok))
+                        :murakumo-exit (:exit r)
+                        :murakumo-err (when (empty? ok)
+                                        (str/trim (str (:err r) (:out r))))
+                        :nodes-staged (count ready)
+                        :nodes-failed (mapv first (remove second staged))
+                        :tasks (count (:tasks batch))
+                        :attempts (count results)
+                        :succeeded (count ok)
+                        :failed (- (count results) (count ok))
+                        :entries (reduce + 0 (keep :consumed parsed))
+                        :names (reduce + 0 (keep :names parsed))
+                        :candidates cands
+                        :distinct-candidates (count cands)}]
+           (if-not (and score? (seq cands))
+             summary
+             (let [observed (str (java.time.LocalDate/now java.time.ZoneOffset/UTC))
+                   obs (enrich! cands observed)
+                   out-name (str "ct-fanout-" (str/replace observed "-" ""))
+                   in-file (clojure.java.io/file data-dir "ingest" (str out-name ".json"))]
+               (clojure.java.io/make-parents in-file)
+               (spit in-file (str "[\n"
+                                  (str/join ",\n"
+                                            (map (fn [o]
+                                                   (str " {" (str/join ", "
+                                                                       (map (fn [[k v]]
+                                                                              (str (edn/edn-str k) ": "
+                                                                                   (if (number? v) v (edn/edn-str v))))
+                                                                            o)) "}"))
+                                                 obs))
+                                  "\n]\n"))
+               (let [scored (phish/score-file! in-file out-name "ct-fanout")]
+                 (merge summary
+                        {:resolved (count (filter #(get % "ip") obs))
+                         :scored scored}
+                        (when commit?
+                          {:git (commit-and-push!
+                                 {:log (str "fanout:" (str/join "+" (sort logs)))
+                                  :from 0 :to 0
+                                  :candidates (count cands)
+                                  :fresh (:confirmed scored)
+                                  :cumulative (:observations scored)})}))))))))))
+
 #?(:clj
    (defn -main
      "CLI. Offline-default: REFUSES without --live (G7 operator gate).
@@ -483,19 +627,19 @@
            per-log (max 1 (quot entries (count logs)))]
        (cond
          (opt "--plan")
-         (let [n (Long/parseLong (opt "--plan"))
-               log-url (ct-logs log)
-               size (if live? (get-sth! log-url) (Long/parseLong (or (opt "--tree-size") "0")))
-               slices (plan-slices (max 0 (- size (* n entries))) size n)]
-           (println (pr-str
-                     {:tasks (mapv (fn [{:keys [start end]}]
-                                     {:id (str "ct-" log "-" start)
-                                      :cmd (str "cd " repo-root " && bb -cp src -e "
-                                                "\"(require '[yabai.methods.ct-watch :as w])"
-                                                "(prn (w/tick! :log \\\"" log "\\\" :start " start
-                                                " :entries " (- end start) "))\"")})
-                                   slices)}))
-           0)
+         (do (println (pr-str (fanout-batch (read-state) logs
+                                            (Long/parseLong (opt "--plan"))
+                                            per-log)))
+             0)
+
+         (opt "--fanout")
+         (let [n (Long/parseLong (opt "--fanout"))
+               nodes (some-> (opt "--nodes") (str/split #",") vec)
+               r (fanout! {:logs logs :slices-per-log n :per-slice per-log :nodes nodes
+                           :score? (some #{"--score"} argv)
+                           :commit? (some #{"--commit"} argv)})]
+           (println (pr-str (dissoc r :candidates)))
+           (if (:ok r) 0 (System/exit 1)))
 
          ;; System/exit, not a return value: launchd and `tamaki exec` read the exit code,
          ;; and `bb -m` discards whatever -main returns.
