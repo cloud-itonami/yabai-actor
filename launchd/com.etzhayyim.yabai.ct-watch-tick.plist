@@ -51,7 +51,7 @@
     <key>GIT_TERMINAL_PROMPT</key>
     <string>0</string>
     <key>YABAI_ROOT</key>
-    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai</string>
+    <string>/Users/junkawasaki/github/com-junkawasaki/orgs/cloud-itonami/yabai-actor</string>
     <key>TAMAKI_BIN</key>
     <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/tamaki/bin/tamaki</string>
     <key>TAMAKI_STATE_DIR</key>
@@ -83,6 +83,6 @@
   <key>StandardErrorPath</key>
   <string>/Users/junkawasaki/.gftd/yabai-ct-watch-tick.stdout.log</string>
   <key>WorkingDirectory</key>
-  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai</string>
+  <string>/Users/junkawasaki/github/com-junkawasaki/orgs/cloud-itonami/yabai-actor</string>
 </dict>
 </plist>

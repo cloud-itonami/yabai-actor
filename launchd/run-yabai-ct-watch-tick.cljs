@@ -25,7 +25,7 @@
 
 (def root
   (or (env "YABAI_ROOT")
-      "/Users/junkawasaki/github/com-junkawasaki/orgs/etzhayyim/com-etzhayyim-yabai"))
+      "/Users/junkawasaki/github/com-junkawasaki/orgs/cloud-itonami/yabai-actor"))
 
 (def tamaki
   (or (env "TAMAKI_BIN")
