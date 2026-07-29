@@ -8,6 +8,7 @@
   G7-gated and verified by running a tick, not here."
   (:require [yabai.methods.ct-watch :as w]
             [yabai.methods.phish-infra :as phish]
+            [clojure.string :as str]
             [clojure.test :refer [deftest is testing run-tests]]))
 
 (deftest u24-is-big-endian-and-unsigned
@@ -80,6 +81,24 @@
   (testing "degenerate inputs do not produce work"
     (is (nil? (w/plan-slices 5 5 4)))
     (is (nil? (w/plan-slices 10 5 4)))))
+
+(deftest fanout-batch-runs-somewhere-that-exists
+  (let [state {:cursors {"argon2026h2" 1000 "nimbus2026" 5000}}
+        b (w/fanout-batch state ["argon2026h2" "nimbus2026"] 2 500)
+        cmds (map :cmd (:tasks b))]
+    (is (= 4 (count (:tasks b))) "slices-per-log x logs")
+    (is (= ["ct-argon2026h2-0" "ct-argon2026h2-1" "ct-nimbus2026-0" "ct-nimbus2026-1"]
+           (mapv :id (:tasks b))))
+    (testing "the command targets the staged directory, not the operator's checkout.
+              The previous --plan emitted `cd <local repo-root> && bb -cp src`, which is
+              why it had never once been executed: no fleet node has that path."
+      (is (every? #(str/includes? % w/remote-src-dir) cmds))
+      (is (not-any? #(str/includes? % "/Users/") cmds)))
+    (testing "slices sit AHEAD of the cursor, so the fleet widens coverage rather than
+              re-reading the band the resident tick is already consuming"
+      (let [starts (map #(Long/parseLong (second (re-find #":start (\d+)" %))) cmds)]
+        (is (every? #(> % 1000) (take 2 starts)))
+        (is (apply < (take 2 starts)) "slices are disjoint and ordered")))))
 
 (deftest known-logs-are-shaped-like-ct-endpoints
   (is (contains? w/ct-logs w/default-log))
