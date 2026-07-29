@@ -189,17 +189,30 @@
    (defn collect-names!
      "Tail `n` entries from `start`, returning {:names :consumed :next}. Stops early if the log
      stops advancing so a tick can never spin."
+     ;; The guard exists to stop a spin when a log stops advancing, so it has to scale with
+     ;; the request instead of being a constant. At 64 it was a SILENT CEILING: argon2026h2
+     ;; returns ~32 entries per response, so 64 requests capped a tick at ~2,019 entries no
+     ;; matter what --entries said — asking for 4096 measurably returned 2019. That cap is
+     ;; why the watch consumed 1,998 entries/hour while the heads advanced by millions, and
+     ;; nothing reported it, because from the outside a satisfied budget and an exhausted
+     ;; guard look identical. Budget for the smallest batch a log may return (16) plus slack.
      [log-url start n]
-     (loop [at start, names (transient []), guard 0]
-       (let [want (min 256 (- (+ start n) at))]
-         (if (or (<= want 0) (>= guard 64))
-           {:names (persistent! names) :consumed (- at start) :next at}
-           (let [es (get-entries! log-url at (+ at want -1))]
-             (if (empty? es)
-               {:names (persistent! names) :consumed (- at start) :next at}
-               (recur (+ at (count es))
-                      (reduce (fn [acc e] (reduce conj! acc (or (entry->names e) []))) names es)
-                      (inc guard)))))))))
+     (let [max-requests (+ 32 (quot n 16))]
+       (loop [at start, names (transient []), guard 0]
+         (let [want (min 256 (- (+ start n) at))]
+           (if (or (<= want 0) (>= guard max-requests))
+             {:names (persistent! names) :consumed (- at start) :next at
+              ;; Say which limit stopped the loop. A tick that stops because it ran out of
+              ;; requests is not the same event as one that finished its budget.
+              :stopped (cond (<= want 0) :budget
+                             (>= guard max-requests) :request-cap
+                             :else :log-stalled)}
+             (let [es (get-entries! log-url at (+ at want -1))]
+               (if (empty? es)
+                 {:names (persistent! names) :consumed (- at start) :next at :stopped :log-stalled}
+                 (recur (+ at (count es))
+                        (reduce (fn [acc e] (reduce conj! acc (or (entry->names e) []))) names es)
+                        (inc guard))))))))))
 
 #?(:clj
    (defn resolve-a!
@@ -276,6 +289,23 @@
      (spit state-file (str ";; yabai ct_watch cursor — GENERATED, do not edit by hand.\n"
                            (pr-str s) "\n"))))
 
+#?(:clj (def ^:private state-lock (Object.)))
+
+#?(:clj
+   (defn update-state!
+     "Read-modify-write the cursor file atomically, returning the new state.
+
+     Shards run CONCURRENTLY, and each one owns only its own key. Reading the state once
+     at the top of a tick and writing the whole map back at the end is safe only while
+     ticks are serial: run six at once and the last writer restores five stale cursors,
+     silently rewinding those shards to where they were an hour ago. Re-reading inside the
+     lock means each shard merges into whatever its siblings have already committed."
+     [f]
+     (locking state-lock
+       (let [next (f (read-state))]
+         (write-state! next)
+         next))))
+
 #?(:clj
    (defn tick!
      "One resident tick. Returns a summary map; every count in it is measured, not assumed.
@@ -290,7 +320,7 @@
            cursor (or start (get-in state [:cursors log]) (max 0 (- size entries)))
            cursor (min cursor size)
            observed (or observed (str (java.time.LocalDate/now java.time.ZoneOffset/UTC)))
-           {:keys [names consumed next]} (collect-names! log-url cursor entries)
+           {:keys [names consumed next stopped]} (collect-names! log-url cursor entries)
            candidates (interesting-names names)
            obs (enrich! candidates observed)
            ;; ONE cumulative observation file per log, not one per cursor. A resident tick that
@@ -338,7 +368,8 @@
        ;; date, and a date cannot express "the head moved 2.3M entries while we took 333".
        ;; Bounded at 96 samples (~4 days hourly): long enough to survive a quiet night,
        ;; short enough that the state file stays a cursor rather than a time series.
-       (write-state! (-> state
+       (update-state! (fn [state]
+                        (-> state
                          (assoc-in [:cursors log] next)
                          (assoc-in [:last log] {:at observed :tree-size size
                                                 :consumed consumed :names (count names)
@@ -348,8 +379,9 @@
                                       (->> (conj (vec h) {:t (System/currentTimeMillis)
                                                           :head size :cursor next})
                                            (take-last 96)
-                                           vec)))))
+                                           vec))))))
        {:log log :tree-size size :from cursor :to next :entries-consumed consumed
+        :stopped stopped :behind (- size next)
         :names (count names) :distinct-names (count (distinct (keep normalize-fqdn names)))
         :candidates (count candidates)
         :candidate-names candidates
@@ -473,8 +505,16 @@
 
          :else
          (let [results
+               ;; Shards run CONCURRENTLY. They are independent cursors on six endpoints
+               ;; across two operators, and a serial loop made the tick's wall-clock the
+               ;; SUM of six network-bound fetches — six times longer for no reason, which
+               ;; is the second reason (after the request cap) the watch consumed so little.
+               ;; Politeness is preserved: concurrency is ACROSS logs, never within one, so
+               ;; no single operator sees more than one in-flight request from this tick.
+               ;; `update-state!` is what makes this safe for the shared cursor file.
                (doall
-                (for [l logs]
+                (pmap
+                 (fn [l]
                   ;; One shard failing must not lose the shards that already succeeded —
                   ;; CT logs return 5xx often enough that an all-or-nothing tick would
                   ;; frequently record nothing at all.
@@ -489,7 +529,8 @@
                     (catch Exception e
                       (binding [*out* *err*]
                         (println (str "  shard " l " FAILED: " (.getMessage e))))
-                      {:log l :failed (.getMessage e)}))))
+                      {:log l :failed (.getMessage e)})))
+                 logs))
                r (first results)]
            ;; Score each shard's CUMULATIVE file, not just this tick's additions: co-hosting
            ;; is a property of the whole observation set, so a domain seen days ago can be

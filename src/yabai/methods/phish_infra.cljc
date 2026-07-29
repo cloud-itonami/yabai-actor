@@ -87,8 +87,8 @@
          {:brand "rakuten"    :seen :corpus :home #{"rakuten.co.jp" "rakuten.com" "rakuten-card.co.jp" "rakuten.jp" "r10s.jp"}}
          {:brand "google"     :seen :corpus :home #{"google.com" "google.co.jp" "googlemail.com" "workspace.google.com" "googleapis.com" "gstatic.com" "googleusercontent.com" "goo.gl" "withgoogle.com"}}
          ;; ── coverage: known phishing targets, not yet observed here ──────────
-         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp" "amazonaws.com" "amazonaws.com.cn" "amazonaws.eu" "awsstatic.com" "aws.amazon.com" "amazon.dev"}}
-         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com" "microsoftonline.com" "microsoft-int.com" "azure.com" "azure.net" "windows.net" "office.com" "sharepoint.com" "azureedge.net"}}
+         {:brand "amazon"     :seen :target :home #{"amazon.com" "amazon.co.jp" "amazon.jp" "amazonaws.com" "amazonaws.com.cn" "amazonaws.eu" "amazonwebservices.com.cn" "amazongamelift.com" "amazonlightsail.com" "awsstatic.com" "aws.amazon.com" "amazon.dev"}}
+         {:brand "microsoft"  :seen :target :home #{"microsoft.com" "microsoft.co.jp" "live.com" "outlook.com" "microsoftonline.com" "microsoft-int.com" "microsoftpersonalcontent.com" "azure.com" "azure.net" "windows.net" "office.com" "sharepoint.com" "azureedge.net"}}
          {:brand "paypal"     :seen :target :home #{"paypal.com" "paypal.co.jp" "paypal.me" "paypalobjects.com"}}
          {:brand "netflix"    :seen :target :home #{"netflix.com" "netflix.co.jp" "nflxvideo.net" "nflximg.net" "nflxext.com"}}
          {:brand "instagram"  :seen :target :home #{"instagram.com" "cdninstagram.com"}}
@@ -249,8 +249,20 @@
                       (if (bounded-hit? (str/lower-case (registrable-label fq)) brand)
                         {:brand brand :method ":bounded-contains" :distance d
                          :score (lexical-weights ":bounded-contains")}
-                        {:brand brand :method ":contains" :distance d
-                         :score (lexical-weights ":contains")})
+                        ;; Only when the brand survives in a name whose separators are still
+                        ;; standing. `normalize-label` strips dots and hyphens so `mast-crade`
+                        ;; compares as `mastcrade` — but the same strip FABRICATES brands
+                        ;; across junctions the registrant never wrote. Measured 2026-07-29 on
+                        ;; a 36k-entry tick: `<hex>.sni.cloudflaressl.com` normalizes to
+                        ;; `…snicloudflaressl`, which contains `icloud` only because the dot
+                        ;; between `sni` and `cloudflaressl` was removed. That admitted every
+                        ;; Cloudflare universal-SSL hostname in the slice — dozens per shard,
+                        ;; each costing a DNS lookup — for a brand nobody wrote. Same for
+                        ;; `ca.ai.cloud.sap` -> `caaicloudsap`.
+                        (when (some #(str/includes? % brand)
+                                    (str/split (str/lower-case fq) #"[.]"))
+                          {:brand brand :method ":contains" :distance d
+                           :score (lexical-weights ":contains")}))
                       (and (pos? (count label))
                            (<= (/ (double d) (count brand)) scramble-max-ratio)
                            (<= (abs (- (count label) (count brand))) 2))

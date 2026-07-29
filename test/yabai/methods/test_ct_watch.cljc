@@ -46,15 +46,21 @@
            (w/interesting-names
             ["www.appliancesolutionsusa.com" "masdercard.com" "*.bq-line.me"
              "whatsapp-income-redeeming.com.ph" "tanstia.teamproit.com"]))))
-  (testing "MEASURED COST of the wider roster: `sni.cloudflaressl.com` contains `icloud`
-            (sn-icloud-flaressl), and that name is one of the most common in CT. It is a
-            mid-word :contains hit, so it can never become a claim on its own — but it
-            still costs a DNS lookup on every tick. Pinned here so the price is visible
-            rather than discovered as a slow tick."
-    (is (= ["db2c8a47.sni.cloudflaressl.com"]
-           (w/interesting-names ["db2c8a47.sni.cloudflaressl.com"])))
-    (is (= ":contains" (:method (phish/lexical-hit "db2c8a47.sni.cloudflaressl.com")))
-        "weakest signal — no claim without infra corroboration")
+  (testing "`sni.cloudflaressl.com` is NOT a candidate — this was a bug, not a price.
+
+            This block previously asserted the opposite and called it a MEASURED COST of
+            the wider roster: `sn-icloud-flaressl` contains `icloud`, so one of the most
+            common names in CT was admitted on every tick, and I pinned that here as a
+            visible price worth paying. It was not a price. `icloud` only appears there
+            because normalize-label strips the dot between `sni` and `cloudflaressl`, so
+            the hit was against a string no registrant ever wrote. Documenting a defect
+            carefully is not the same as noticing it; the pin made the cost visible and
+            simultaneously made it look intended, which is why it survived until a 36k-entry
+            tick made the volume impossible to ignore.
+
+            :contains now requires the brand to survive inside a single dot-label."
+    (is (= [] (w/interesting-names ["db2c8a47.sni.cloudflaressl.com"])))
+    (is (nil? (phish/lexical-hit "db2c8a47.sni.cloudflaressl.com")))
     (is (nil? (:status (first (phish/score-domains
                                [{"domain" "db2c8a47.sni.cloudflaressl.com"}]))))))
   (testing "a brand's own domain is never a candidate — it is the victim"
