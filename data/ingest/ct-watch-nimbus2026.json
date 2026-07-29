@@ -1,6 +1,7 @@
 [
  {"domain": "septembertheline.com", "observed": "2026-07-29", "ip": "23.227.38.32", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "CA"},
  {"domain": "www.avacline.com", "observed": "2026-07-29", "ip": "198.185.159.145", "asn": 53831, "asn_org": "SQUARESPACE - Squarespace, Inc., US", "asn_country": "US"},
+ {"domain": "claudehotline.top", "observed": "2026-07-29"},
  {"domain": "microsoft.com.244778543667.umadb.ro", "observed": "2026-07-28", "ip": "104.225.208.27", "asn": 46505, "asn_org": "NIXIHOST - NixiHost.com Incorporated, US", "asn_country": "US"},
  {"domain": "www.sidelines.ca", "observed": "2026-07-28", "ip": "23.227.38.32", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "CA"},
  {"domain": "facebook-help-like-ads.ph", "observed": "2026-07-28", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
@@ -8,6 +9,7 @@
  {"domain": "facebookloginsoftware-verifybackup.com.ph", "observed": "2026-07-29", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
  {"domain": "616b3431.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "84278fe8.sni.cloudflaressl.com", "observed": "2026-07-29", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
+ {"domain": "telegram.830.ru", "observed": "2026-07-29", "ip": "45.155.207.254", "asn": 43581, "asn_org": "ZTVCORP-AS - ZTV CORP LLC, RU", "asn_country": "HK"},
  {"domain": "www.facebooklogintrade-experthub.com.ph", "observed": "2026-07-29", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
  {"domain": "instavar.com", "observed": "2026-07-29", "ip": "76.76.21.21", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "f10f9986.sni.cloudflaressl.com", "observed": "2026-07-28", "ip": "172.66.164.120", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
