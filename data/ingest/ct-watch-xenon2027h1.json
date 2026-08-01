@@ -30,6 +30,7 @@
  {"domain": "lm-terran-testaossoap.sandbox.operations.high.microsoftdynamics.us", "observed": "2026-07-31", "ip": "52.127.53.137", "asn": 8070, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
  {"domain": "id-check-api-test.picpensiononline-npe.net", "observed": "2026-07-31", "ip": "20.90.134.20", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
  {"domain": "energiebuendel-online.de", "observed": "2026-07-31", "ip": "18.64.67.10", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "links.thesightline.xyz", "observed": "2026-08-01", "ip": "3.168.245.78", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "applekl.com", "observed": "2026-07-31"},
  {"domain": "mail.worktruckonline.com.mcas-df-gov.us", "observed": "2026-07-31", "ip": "13.72.27.219", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
  {"domain": "gprd-usgt-roleservice-dr.internal.mda.microsoft.us", "observed": "2026-07-31", "ip": "52.243.227.97", "asn": 8075, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
