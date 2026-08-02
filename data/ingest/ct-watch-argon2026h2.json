@@ -833,6 +833,7 @@
  {"domain": "www.whm.toplinecontentmarketn-r4kgck8g840og88s4c8s4k4c.43.154.24.210.sslip.io", "observed": "2026-07-29", "ip": "43.154.24.210", "asn": 132203, "asn_org": "TENCENT-NET-AP-CN - Tencent Building, Kejizhongyi Avenue, CN", "asn_country": "SG"},
  {"domain": "www.astrixcapitalpro.online.search-skill.com", "observed": "2026-07-31", "ip": "103.27.73.60", "asn": 150172, "asn_org": "STSB-AS-AP - Serverfreak Technologies Sdn Bhd, MY", "asn_country": "MY"},
  {"domain": "netflixcasino796.com", "observed": "2026-08-02", "ip": "104.21.24.171", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
+ {"domain": "shoshongonline.co.bw", "observed": "2026-08-02", "ip": "104.21.23.171", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "casinocashed-online.com", "observed": "2026-08-01", "ip": "172.67.181.158", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "aricare.in.happytoursonline.com", "observed": "2026-07-31", "ip": "65.108.110.225", "asn": 24940, "asn_org": "HETZNER-AS - Hetzner Online GmbH, DE", "asn_country": "DE"},
  {"domain": "lumleypizzaonline.com", "observed": "2026-07-28", "ip": "172.67.73.229", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
