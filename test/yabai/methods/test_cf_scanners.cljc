@@ -28,11 +28,26 @@
   (is (= [820 ":confirmed"] (i/scanner-tier 1 50)))  ;; 50 req → mid
   (is (= [700 ":candidate"] (i/scanner-tier 1 3))))  ;; weak → candidate
 
+(deftest rolling-snapshot-supersedes-historical-scanner-files
+  (is (cf/curated-data-file? cf/latest-scanner-file true))
+  (is (not (cf/curated-data-file?
+            "http-probe-scanners-kotoba-20260713-20260716.kotoba.edn" true)))
+  (is (cf/curated-data-file?
+       "http-probe-scanners-kotoba-20260713-20260716.kotoba.edn" false))
+  (is (cf/curated-data-file? "email-phishing-gftd-202607.kotoba.edn" true)))
+
 (def obs
   [{"ip" "1.2.3.4" "cc" "NL" "path" "/.env"      "count" 300 "zone" "gftd.ai"}
    {"ip" "1.2.3.4" "cc" "NL" "path" "/wp-login.php" "count" 300 "zone" "murakumo.cloud"}
    {"ip" "1.2.3.4" "cc" "NL" "path" "/"          "count" 999 "zone" "gftd.ai"}   ;; legit → ignored
    {"ip" "9.9.9.9" "cc" "US" "path" "/.git/config" "count" 4 "zone" "shinshi.club"}])
+
+(deftest publication-withholds-weak-candidates
+  (let [rows (i/bridge-cf-scanners obs "test-src" "authoritative")
+        public (cf/public-scanner-iocs rows)]
+    (is (= 1 (count public)))
+    (is (= "1.2.3.4" (get (first public) ":indicator/value")))
+    (is (every? #(= ":confirmed" (get % ":indicator/status")) public))))
 
 (deftest bridge-aggregates-and-tiers
   (let [rows (i/bridge-cf-scanners obs "test-src" "authoritative")

@@ -202,10 +202,11 @@
 
 ;; ── Cloudflare zone HTTP-scanner bridge (ADR-2607170800) ────────────────────
 ;; Turns per-request Cloudflare zone observations into :indicator/* :scanner IOCs.
-;; The kotoba estate serves NO WordPress/Joomla/PHP/.env/.git, so any request to
-;; those paths on an operator-owned zone is unambiguous hostile reconnaissance
-;; (honeypot posture — the catch-all 200 keeps scanners engaged; yabai only SCORES,
-;; never blocks). This is the single source of truth for the detection heuristic that
+;; The kotoba estate serves NO WordPress/Joomla/PHP/.env/.git, so requests to
+;; those paths on an operator-owned zone are high-signal scanner observations.
+;; Sites return 403/404 while Cloudflare analytics preserves the observation;
+;; an IP is a network source, not attribution to a natural person. This is the
+;; single source of truth for the detection heuristic that
 ;; the live sweep (cf_sweep.cljc, G7-gated) and any offline replay both consume.
 
 (def scanner-probe-re

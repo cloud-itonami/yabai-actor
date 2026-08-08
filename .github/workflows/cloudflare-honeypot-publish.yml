@@ -1,0 +1,45 @@
+name: Cloudflare honeypot publish
+
+on:
+  schedule:
+    - cron: "20 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cloudflare-honeypot-publish
+  cancel-in-progress: false
+
+jobs:
+  publish-confirmed-scanner-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      YABAI_OPERATOR_GATE: ${{ secrets.YABAI_OPERATOR_GATE }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: DeLaGuardo/setup-clojure@3fe9b3ae632c6758d0b7757b0838606ef4287b08 # 13.4
+        with:
+          bb: 1.12.218
+      - name: Sweep the rolling seven-day window
+        shell: bash
+        run: |
+          set -euo pipefail
+          to="$(date -u +%F)"
+          from="$(date -u -d '6 days ago' +%F)"
+          bb -cp src -m yabai.methods.cf-sweep --live --from "$from" --to "$to"
+      - name: Validate scanner policy
+        run: bb -cp src test/yabai/methods/test_cf_scanners.cljc
+      - name: Publish changed CTI snapshots
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add data/http-probe-scanners-kotoba-latest.kotoba.edn data/passive-dns.merged.kotoba.edn
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "yabai-observer[bot]"
+          git config user.email "yabai-observer[bot]@users.noreply.github.com"
+          git commit -m "data(cf): refresh confirmed scanner observations"
+          git push
