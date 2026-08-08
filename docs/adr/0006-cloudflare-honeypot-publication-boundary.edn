@@ -1,0 +1,33 @@
+[{:db/id -1
+  :adr/id "adr-0006-cloudflare-honeypot-publication-boundary"
+  :adr/title "ADR-0006: Cloudflare honeypot の観測面と公開 IOC の境界"
+  :adr/status "accepted, implemented"
+  :adr/doc_type "adr"
+  :adr/date "2026-08-08"
+  :adr/deciders ["Jun Kawasaki"]
+  :adr/topic "cloudflare-honeypot-publication-boundary"
+  :adr/related ["adr-2607170800-yabai-cloudflare-zone-scanner-ingest-honeypot"]
+  :adr/supersedes ["adr-2607170800 の catch-all 200 / 全 candidate IP 公開部分"]
+  :adr/superseded_by []
+  :adr/repos ["cloud-itonami/yabai-actor" "network-awai/net-babiniku"
+              "network-awai/club-shinshi-app"]
+  :adr/authoritative true
+  :adr/authoritative_for ["Cloudflare probe 観測を公開サイトの HTTP 意味論から分離すること"
+                          "Yabai が公開する scanner source の証拠閾値と非帰属表現"
+                          "日次 rolling 7-day publication workflow"]
+  :adr/last_verified "2026-08-08"
+  :adr/body "# ADR-0006: Cloudflare honeypot publication boundary
+
+## Decision
+
+公開サイトは実在する document/API/asset だけを 2xx とし、未実装 route は 404、secret・server-stack probe は Cloudflare WAF で 403 とする。観測は catch-all HTML ではなく Cloudflare HTTP analytics に残す。これにより probe が pageview/visitor 指標へ混入しない。
+
+Yabai の G7-gated collector は UTC の rolling 7 days を日次取得する。単一 zone かつ 50 request 未満の candidate は transient analytics に留め、repo に永続化・公開しない。2 zone 以上または 50 request 以上だけを `:confirmed` source-address IOC として rolling snapshot に公開する。IP は観測された network source であり、人・組織への帰属ではない。shared NAT、proxy、侵害 host の可能性を明記する。
+
+公開物には query、header、cookie、body、User-Agent、raw probe path を含めない。rolling snapshot が過去 snapshot を current graph 上で supersede し、古い source が永久に残らないようにする。誤掲載の連絡を受けた場合は当該 IOC を review し、根拠を再取得できなければ次 snapshot から除外する。
+
+## Workflow
+
+GitHub Actions `cloudflare-honeypot-publish.yml` が毎日 21:20 UTC に実行される。`CF_API_TOKEN` と明示的な `YABAI_OPERATOR_GATE` secret が無い場合は fail closed。collector、policy tests、rolling public snapshot と merged graph の commit の順で実行する。"
+  :adr/decision-summary
+  "{:http {:known 2xx :unknown 404 :sensitive-probe 403} :observation :cloudflare-http-analytics :publication {:window-days 7 :confirmed-only true :threshold \"zones>=2 or requests>=50\" :natural-person-attribution false :excluded [:query :headers :cookies :body :user-agent :raw-path]} :schedule \"daily 21:20 UTC\" :gate [:CF_API_TOKEN :YABAI_OPERATOR_GATE]}"}]
