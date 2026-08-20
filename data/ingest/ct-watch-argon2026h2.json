@@ -215,6 +215,7 @@
  {"domain": "sagatm.com", "observed": "2026-07-29", "ip": "198.185.159.144", "asn": 53831, "asn_org": "SQUARESPACE - Squarespace, Inc., US", "asn_country": "US"},
  {"domain": "online.hyemtech.com", "observed": "2026-07-29", "ip": "147.93.77.135", "asn": 47583, "asn_org": "AS-HOSTINGER - Hostinger International Limited, CY", "asn_country": "DE"},
  {"domain": "lxy-storylines.pages.dev", "observed": "2026-07-30", "ip": "172.66.47.69", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
+ {"domain": "whatsapp-1ma.pages.dev", "observed": "2026-08-20", "ip": "172.66.45.20", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "finelinedesign.net.au", "observed": "2026-07-30", "ip": "66.102.128.62", "asn": 40092, "asn_org": "ONIAAS - HostPapa, US", "asn_country": "US"},
  {"domain": "2757judionline.com", "observed": "2026-07-29", "ip": "104.21.43.218", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "www.mantrasingen-online.de", "observed": "2026-08-20", "ip": "178.254.0.79"},
