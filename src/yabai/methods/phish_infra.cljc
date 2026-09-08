@@ -23,7 +23,7 @@
 
   House style: ':…' keyword strings stay strings; every scoring fn is pure and portable
   (no JVM interop); file I/O only behind #?(:clj …), mirroring ingest/cf-sweep."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.ingest :as ingest]
             [yabai.methods.yabai-edn :as edn]))
 
@@ -117,7 +117,7 @@
   "Everything left of the public suffix, lowercased. `bq-line.me` → `bq-line`,
   `login.smbc.example.co.jp` → `login.smbc.example`."
   [fqdn]
-  (let [parts (str/split (str/lower-case (str/trim (str fqdn))) #"\.")
+  (let [parts (str/split (str/lower (str/trim (str fqdn))) #"\.")
         n (count parts)]
     (cond
       (<= n 1) (first parts)
@@ -135,7 +135,7 @@
   corroborated them into `:confirmed` 900. They are one registrant on one host — that is
   not corroboration, it is the same observation four times."
   [fqdn]
-  (let [parts (str/split (str/lower-case (str/trim (str fqdn))) #"\.")
+  (let [parts (str/split (str/lower (str/trim (str fqdn))) #"\.")
         n (count parts)]
     (cond
       (<= n 2) (str/join "." parts)
@@ -146,7 +146,7 @@
   "Lowercase, drop everything that is not a letter or digit — so `mast-crade` and
   `mastcrade` compare identically."
   [s]
-  (str/replace (str/lower-case (str s)) #"[^a-z0-9]" ""))
+  (str/replace (str/lower (str s)) #"[^a-z0-9]" ""))
 
 ;; ── OSA (Damerau-Levenshtein with adjacent transposition) ───────────────────
 ;; Transposition matters here: the corpus is dominated by swapped-letter typos
@@ -215,7 +215,7 @@
   stronger method, which is already the reduce order."
   ([fqdn] (lexical-hit fqdn default-brands))
   ([fqdn brands]
-   (let [fq (str/lower-case (str/trim (str fqdn)))
+   (let [fq (str/lower (str/trim (str fqdn)))
          label (normalize-label (registrable-label fq))
          ;; a home domain of ANY brand is out of scope entirely — never report the victim
          ;; Match home on the REGISTRABLE DOMAIN, not the exact fqdn. A brand's own
@@ -246,7 +246,7 @@
                       {:brand brand :method ":whole-label-typo" :distance d
                        :score (lexical-weights ":whole-label-typo")}
                       (str/includes? label brand)
-                      (if (bounded-hit? (str/lower-case (registrable-label fq)) brand)
+                      (if (bounded-hit? (str/lower (registrable-label fq)) brand)
                         {:brand brand :method ":bounded-contains" :distance d
                          :score (lexical-weights ":bounded-contains")}
                         ;; Only when the brand survives in a name whose separators are still
@@ -260,7 +260,7 @@
                         ;; each costing a DNS lookup — for a brand nobody wrote. Same for
                         ;; `ca.ai.cloud.sap` -> `caaicloudsap`.
                         (when (some #(str/includes? % brand)
-                                    (str/split (str/lower-case fq) #"[.]"))
+                                    (str/split (str/lower fq) #"[.]"))
                           {:brand brand :method ":contains" :distance d
                            :score (lexical-weights ":contains")}))
                       (and (pos? (count label))

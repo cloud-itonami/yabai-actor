@@ -7,7 +7,7 @@
   (kept as \":ns/name\" strings), nil/true/false, nested vectors. Maps preserve
   insertion order. Classifier buckets domains/pdns/iphist/certs/indicators/access/
   btobs (domains keyed by :domain/id, the rest lists)."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ── reader (same proven char-cursor reader as the *_edn family) ─────────────
 (def ^:private eof ::eof)

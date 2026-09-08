@@ -14,7 +14,7 @@
   edges. defaultdict(int) iteration order is preserved via insertion-ordered accumulators so the
   rendered tables + derived datoms tie the Python order on ties. The Python `__main__` CLI is
   ported under #?(:clj) -main."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.yabai-edn :as edn]))
 
 (def fast-flux-ttl 300)       ; TTL ≤ this …

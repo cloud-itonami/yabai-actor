@@ -15,7 +15,7 @@
   Self-contained: sha-256 + canonical-json inlined (no external deps), reusing only the sibling
   yabai.methods.yabai-edn reader/serializer. House style: ':…' keyword strings stay strings;
   file I/O only behind #?(:clj …). The Python `__main__` demo is omitted."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.yabai-edn :as edn]))
 
 (def id-keys [":domain/id" ":pdns/id" ":iphist/id" ":tlscert/id" ":indicator/id" ":access/id"])

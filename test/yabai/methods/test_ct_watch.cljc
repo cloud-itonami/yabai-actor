@@ -8,7 +8,7 @@
   G7-gated and verified by running a tick, not here."
   (:require [yabai.methods.ct-watch :as w]
             [yabai.methods.phish-infra :as phish]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [clojure.test :refer [deftest is testing run-tests]]))
 
 (deftest u24-is-big-endian-and-unsigned

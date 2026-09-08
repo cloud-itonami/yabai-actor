@@ -52,7 +52,7 @@
   carrier/CDR feed is a separate, operator-gated wave and is NOT implied by this namespace.
 
   House style: ':…' keyword strings stay strings; every scoring fn is pure and portable."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ── institution roster ──────────────────────────────────────────────────────
 

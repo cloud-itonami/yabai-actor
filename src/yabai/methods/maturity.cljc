@@ -27,7 +27,7 @@
 
   No network, no LLM, no clock: the same repo state always yields the same score, so two
   readings are comparable and a loop cannot drift its own baseline."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.phish-infra :as phish]
             [yabai.methods.ct-watch :as ct]
             [yabai.methods.yabai-edn :as edn]))
