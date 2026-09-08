@@ -14,7 +14,7 @@
   network + file I/O only behind #?(:clj …). The Python `__main__` CLI driver + live crt.sh fetch
   (urllib) are omitted (noted here): main wires source/in/domain/family/live flags to the
   bridges + the dedup-merge writer."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.yabai-edn :as edn]))
 
 (def crtsh "https://crt.sh/?q={q}&output=json")
@@ -23,7 +23,7 @@
 (defn slug
   "Port of _slug(s): re.sub(r'[^a-z0-9]+','-', str(s).lower()).strip('-')."
   [s]
-  (-> (str/lower-case (str s))
+  (-> (str/lower (str s))
       (str/replace #"[^a-z0-9]+" "-")
       (str/replace #"^-+" "")
       (str/replace #"-+$" "")))
@@ -169,7 +169,7 @@
                                      {":domain/id" did ":domain/fqdn" d
                                       ":domain/tld" (if (str/includes? d ".") (last (str/split d #"\.")) d)
                                       ":domain/sourcing" (str ":" sourcing)})
-                      rrtype (str/lower-case (str (get r "rrtype" "a")))
+                      rrtype (str/lower (str (get r "rrtype" "a")))
                       rrdata (or (get r "rrdata")
                                  (if (get r "value") [(get r "value")] []))
                       rec0 {":pdns/id" (str "pdns." (slug d) "." rrtype "." (slug (str (vec (take 1 rrdata)))))

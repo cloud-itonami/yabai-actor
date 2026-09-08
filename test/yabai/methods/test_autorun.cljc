@@ -9,7 +9,7 @@
 
   Run: bb test:yabai (from 20-actors as the bb source root)."
   (:require [clojure.test :refer [deftest is run-tests]]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             #?(:clj [clojure.java.io :as io])
             [yabai.methods.autorun :as autorun]
             [yabai.methods.kotoba :as kotoba]))

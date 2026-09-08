@@ -31,7 +31,7 @@
   House style: pure fns portable and tested; network + file I/O behind #?(:clj …); HTTP and
   DNS go through curl / dig subprocesses, the same discipline cf_sweep uses (bb ships no
   JNDI, so `javax.naming` is not available for the Cymru TXT lookup)."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.ingest :as ingest]
             [yabai.methods.phish-infra :as phish]
             [yabai.methods.yabai-edn :as edn]))
@@ -81,7 +81,7 @@
   "`*.Foo.EXAMPLE.com ` → `foo.example.com`. nil for anything that is not a plausible name
   (CT SANs also carry IPs and, rarely, junk)."
   [s]
-  (let [n (-> (str s) str/trim str/lower-case (str/replace #"^\*\." ""))]
+  (let [n (-> (str s) str/trim str/lower (str/replace #"^\*\." ""))]
     (when (and (seq n)
                (str/includes? n ".")
                (re-matches #"[a-z0-9._-]+" n)

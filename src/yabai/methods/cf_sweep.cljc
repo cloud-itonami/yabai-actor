@@ -16,7 +16,7 @@
   House style: pure detection lives in ingest (single source of truth); this file is the
   #?(:clj) live+file driver only (bb runtime, dependency-free inline Java for HTTP + Keychain,
   mirroring kotoba.cljc's inline java.security usage). NOT claimed portable."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.ingest :as ingest]
             [yabai.methods.yabai-edn :as edn]))
 
@@ -159,7 +159,7 @@
      "G7 live pull: sweep all zones over [from..to], write a dated scanner IOC file, and rebuild
      the merged graph. Returns a summary. Requires a CF token."
      [from to & {:keys [source] :or {source "kotoba-cf-zones"}}]
-     (let [gate (some-> (System/getenv "YABAI_OPERATOR_GATE") str/lower-case)
+     (let [gate (some-> (System/getenv "YABAI_OPERATOR_GATE") str/lower)
            _ (when-not (#{"1" "true" "open"} gate)
                (throw (ex-info "YABAI_OPERATOR_GATE is not open" {})))
            token (or (keychain-token)

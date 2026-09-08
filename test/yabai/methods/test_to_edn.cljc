@@ -7,7 +7,7 @@
   edn-val. It was ISOLATED. Pins the output structure and the per-type value formatting, so a
   regression that corrupted the persisted EDN (or mis-quoted a value) is caught."
   (:require [yabai.methods.yabai-edn :as e]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [clojure.test :refer [deftest is run-tests]]))
 
 (deftest serializes-header-then-bracketed-records

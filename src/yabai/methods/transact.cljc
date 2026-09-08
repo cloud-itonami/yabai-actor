@@ -12,7 +12,7 @@
   House style: ':…' keyword strings stay strings; pure fns (rows->datoms / schema-datoms /
   check-encryption-invariant) are portable; network + file I/O only behind #?(:clj …). The
   Python `__main__` demo (dry-run printer) is ported as #?(:clj) main."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [yabai.methods.yabai-edn :as edn]))
 
 (def id-keys [":domain/id" ":pdns/id" ":iphist/id" ":tlscert/id"
