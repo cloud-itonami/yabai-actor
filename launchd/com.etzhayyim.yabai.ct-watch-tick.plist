@@ -24,7 +24,7 @@
   `tamaki status` with its real argv and exit code.
 
   Install:
-    cp launchd/run-yabai-ct-watch-tick.cljs ~/.gftd/
+    cp launchd/run-yabai-ct-watch-tick.kotoba ~/.gftd/
     cp launchd/com.etzhayyim.yabai.ct-watch-tick.plist ~/Library/LaunchAgents/
     launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.etzhayyim.yabai.ct-watch-tick.plist
     launchctl enable  gui/$(id -u)/com.etzhayyim.yabai.ct-watch-tick

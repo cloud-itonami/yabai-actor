@@ -25,10 +25,10 @@
 
 ## Status
 
-accepted, implemented, verified live（2026-07-28）。実装は `src/yabai/methods/ct_watch.cljc`
-（新規）・`test/yabai/methods/test_ct_watch.cljc`（新規 6 tests / 30 assertions）・
-`launchd/run-yabai-ct-watch-tick.cljs` + `launchd/com.etzhayyim.yabai.ct-watch-tick.plist`
-（新規）・`src/yabai/methods/phish_infra.cljc`（共有 IP 規約を追加）・`run_tests.sh`。
+accepted, implemented, verified live（2026-07-28）。実装は `src/yabai/methods/ct_watch.kotoba`
+（新規）・`test/yabai/methods/test_ct_watch.kotoba`（新規 6 tests / 30 assertions）・
+`launchd/run-yabai-ct-watch-tick.kotoba` + `launchd/com.etzhayyim.yabai.ct-watch-tick.plist`
+（新規）・`src/yabai/methods/phish_infra.kotoba`（共有 IP 規約を追加）・`run_tests.sh`。
 
 ## Context
 
