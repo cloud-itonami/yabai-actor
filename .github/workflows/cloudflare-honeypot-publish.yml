@@ -32,7 +32,7 @@ jobs:
           from="$(date -u -d '6 days ago' +%F)"
           bb -cp src -m yabai.methods.cf-sweep --live --from "$from" --to "$to"
       - name: Validate scanner policy
-        run: bb -cp src test/yabai/methods/test_cf_scanners.cljc
+        run: bb -cp src test/yabai/methods/test_cf_scanners.kotoba
       - name: Publish changed CTI snapshots
         shell: bash
         run: |

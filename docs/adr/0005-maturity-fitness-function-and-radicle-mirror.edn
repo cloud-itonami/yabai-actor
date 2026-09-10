@@ -22,9 +22,9 @@
 
 ## Status
 
-accepted, implemented, verified（2026-07-28）。実装は `src/yabai/methods/maturity.cljc`（新規）・
-`test/yabai/methods/test_maturity.cljc`（新規 6 tests / 24 assertions）・`docs/maturity.edn`（生成物）・
-`src/yabai/methods/ct_watch.cljc` の `mirror-to-radicle!`・`actor.edn` の `:rad-rid`・`run_tests.sh`。
+accepted, implemented, verified（2026-07-28）。実装は `src/yabai/methods/maturity.kotoba`（新規）・
+`test/yabai/methods/test_maturity.kotoba`（新規 6 tests / 24 assertions）・`docs/maturity.edn`（生成物）・
+`src/yabai/methods/ct_watch.kotoba` の `mirror-to-radicle!`・`actor.edn` の `:rad-rid`・`run_tests.sh`。
 
 ## Context
 

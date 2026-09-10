@@ -20,7 +20,7 @@ AML/sanctions/anti-social forces risk scoring + IP access filtering。
 > - **Analyzer** `methods/analyze.py` — fast-flux candidates · hosting concentration · IOC
 >   TLP/category load · IP-movement churn · cert-SAN pivots · **G6/G10 encryption self-audit**
 >   → `out/intel-report.md` + derived `:cti/*` datoms.
-> - **Telephony institution-impersonation scorer** `src/yabai/methods/line_infra.cljc`
+> - **Telephony institution-impersonation scorer** `src/yabai/methods/line_infra.kotoba`
 >   (2026-07-28) — the sibling of `phish_infra` on the other side of the same attack.
 >   phish_infra scores DOMAINS + hosting; this scores presented CALLING NUMBERS + the
 >   procurement ROUTE, which is the channel that actually carries the 2026 corporate fraud
@@ -47,7 +47,7 @@ AML/sanctions/anti-social forces risk scoring + IP access filtering。
 >   only closable loop. **Offline-default: there is no live telephony feed; the calibration
 >   corpus is the artifact.** SD analysis: kotoba-lang/loop-system-dynamics
 >   `corporate-vishing-fraud`.
-> - **Domain phishing scorer** `src/yabai/methods/phish_infra.cljc` (**ADR-0003**) — the
+> - **Domain phishing scorer** `src/yabai/methods/phish_infra.kotoba` (**ADR-0003**) — the
 >   brand-impersonation judgement, ported off the retired RisingWave `track-phishing-infra`
 >   tool. Two independent signals: **lexical** (whole-label OSA typo / boundary-anchored
 >   containment / scramble) and **co-hosting** (does it share a resolving IP with domains that

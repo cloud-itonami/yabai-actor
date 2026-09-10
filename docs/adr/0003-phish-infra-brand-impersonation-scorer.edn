@@ -24,11 +24,11 @@
 
 ## Status
 
-accepted, implemented, verified（2026-07-28）。実装は `src/yabai/methods/phish_infra.cljc`
-（新規）・`test/yabai/methods/test_phish_infra.cljc`（新規、14 tests / 71 assertions）・
+accepted, implemented, verified（2026-07-28）。実装は `src/yabai/methods/phish_infra.kotoba`
+（新規）・`test/yabai/methods/test_phish_infra.kotoba`（新規、14 tests / 71 assertions）・
 `data/ingest/phishing-infra-20260419.json`（復元した観測コーパス）・
 `data/phishing-infra-20260419.kotoba.edn`（生成物）・`data/passive-dns.merged.kotoba.edn`（再生成）。
-副次修正として `src/yabai/methods/analyze.cljc` の `-main` と `run_tests.sh`。
+副次修正として `src/yabai/methods/analyze.kotoba` の `-main` と `run_tests.sh`。
 
 ## Context
 
