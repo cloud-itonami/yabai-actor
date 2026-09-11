@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the brand-impersonation / phishing-infrastructure scorer (ADR-0003).
-;; Run: bb --classpath src:test test/yabai/methods/test_phish_infra.cljc
+;; Run: kbb --classpath src:test test/yabai/methods/test_phish_infra.cljc
 (ns yabai.methods.test-phish-infra
   "Pins the two scoring signals and — more importantly — the CALIBRATION between them.
 

@@ -145,7 +145,7 @@ deferral した id は生成ファイルのヘッダに明記する。
 
 - **`analyze.cljc` の `-main` は ADR-0001 以降ずっと死んでいた。** repo root を
   `*file*` から辿っていたが、(a) 階層数が `methods/` 時代の 2 のままで、(b) そもそも
-  `*file*` を**関数本体で読んでいた** — 呼び出し時には caller のファイル（`bb -e` では
+  `*file*` を**関数本体で読んでいた** — 呼び出し時には caller のファイル（`kbb -e` では
   `NO_SOURCE_PATH`）に再束縛されるため NPE。cf_sweep / ingest / autorun と同じく
   **load 時の `def`** で解決するよう修正。ADR-0002 は cf_sweep の (a) だけを直していた。
 - **`run_tests.sh` が autorun スイートしか走らせていなかった。** cf-scanners /

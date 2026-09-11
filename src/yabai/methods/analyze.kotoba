@@ -265,9 +265,9 @@
     (P "]")
     (str (str/join "\n" (persistent! L)) "\n")))
 
-;; Repo root resolved at LOAD time (bb binds *file* to the file being loaded). It must not be
+;; Repo root resolved at LOAD time (kbb -M:binds *file* to the file being loaded). It must not be
 ;; read inside -main: there *file* is rebound to the CALLER's file, which is NO_SOURCE_PATH
-;; under `bb -e`, and the getParentFile chain then NPEs. src/yabai/methods/ -> root is 3 up.
+;; under `kbb -e`, and the getParentFile chain then NPEs. src/yabai/methods/ -> root is 3 up.
 ;; ADR-0001's methods/ -> src/yabai/methods/ move left the arithmetic at 2 levels here;
 ;; ADR-0002 corrected the same staleness in cf_sweep but this call site was missed, so
 ;; `analyze -main` had been dead since. Matches the cf_sweep / ingest / autorun pattern.

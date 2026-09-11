@@ -25,7 +25,7 @@
 com-etzhayyim-yabai は py→clj port wave (ADR-2606160842) で `methods/*.cljc` に Clojure
 実装を置いたが、namespace（`yabai.methods.autorun` 等）とファイルパス（`methods/autorun.cljc`）
 が不一致だった。Clojure/babashka は namespace `yabai.methods.autorun` を classpath 上の
-`yabai/methods/autorun.cljc` として解決するため、`bb -e '(require ...)'` が FileNotFoundError
+`yabai/methods/autorun.cljc` として解決するため、`kbb -e '(require ...)'` が FileNotFoundError
 になり、**run_tests.sh も壊れていた**（fleet green-check に組み込まれているはずが動かなかった）。
 
 meisai はこの問題が無い — meisai は etzhayyim/root の `20-actors/meisai/methods/` にあり、
@@ -37,7 +37,7 @@ namespace `meisai.methods.*` とパスが一致するから `-cp 20-actors` で�
 ### 1. namespace/path conformance（構造修正）
 `methods/*.cljc` を `src/yabai/methods/` へ、`methods/test_*.cljc` を `test/yabai/methods/` へ
 git mv（履歴保持）。namespace は `yabai.methods.*` のまま（既に正しい）。deps.edn の
-`:paths [\"src\"]` で src/ が classpath 基点になり、`bb -cp src` で namespace が解決する。
+`:paths [\"src\"]` で src/ が classpath 基点になり、`kbb -cp src` で namespace が解決する。
 `yabai_edn.cljc`（namespace `yabai.methods.yabai-edn`）など、namespace の `-` はファイル名の
 `_` に対応する（Clojure 慣習）。
 
@@ -52,13 +52,13 @@ repo-root（src/yabai/methods → src/yabai → src → root の3階層上）に
 key 不在時のみ発動し、nil 明示渡しでは発動しないため、明示 `(or log-path log-default)`）。
 
 ### 3. launchd plist（meisai pattern, ADR-2606122400 系）
-`launchd/com.etzhayyim.yabai.cti.heartbeat.plist` を追加。`bb -cp src -e` で
+`launchd/com.etzhayyim.yabai.cti.heartbeat.plist` を追加。`kbb -cp src -e` で
 `yabai.methods.autorun/-main --cycles 1` を呼ぶ。StartInterval=3600（毎時）、RunAtLoad=true。
 autorun は **NO live network I/O**（G7 gated）で LOCAL kotoba Datom log に書く host-local
 ループなので、共有 fleet cell でなく LaunchAgent が正しい residence（meisai と同じ根拠）。
 
 ### 4. run_tests.sh 修正
-`cd \"$(dirname \"$0\")\"` で repo root に留まり、`bb -cp src:test` で classpath 明示。
+`cd \"$(dirname \"$0\")\"` で repo root に留まり、`kbb -cp src:test` で classpath 明示。
 
 ## Consequences
 

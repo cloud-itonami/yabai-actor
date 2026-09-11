@@ -83,7 +83,7 @@ ASN は `dig TXT <reversed-ip>.origin.asn.cymru.com`（public / 無料 / 鍵不�
 
 - Label `com.etzhayyim.yabai.ct-watch-tick`、`StartInterval` 3600、`RunAtLoad`。
 - entry は `~/.gftd/run-yabai-ct-watch-tick.cljs`（nbb）で、中身は
-  **`tamaki exec` 経由**で `bb -m yabai.methods.ct-watch --live --score --commit` を回す。
+  **`tamaki exec` 経由**で `kbb -m yabai.methods.ct-watch --live --score --commit` を回す。
   tick は決定論的で **loop の中にモデルが居ない**ので、`tamaki exec` の
   `:agent.run/mode :external` として実 argv と exit code のまま記録される
   （`tamaki status` に出る）。`local` モードは kotoba-code = モデルに渡す経路なので使わない。

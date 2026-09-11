@@ -8,7 +8,7 @@
 # regression in them could not fail the green-check.
 set -euo pipefail
 cd "$(dirname "$0")"
-exec bb -cp src:test -e '
+exec kbb -cp src:test -e '
 (require (quote clojure.test)
          (quote yabai.methods.test-autorun)
          (quote yabai.methods.test-cf-scanners)

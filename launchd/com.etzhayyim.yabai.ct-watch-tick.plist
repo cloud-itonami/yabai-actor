@@ -12,7 +12,7 @@
 
   Residency is a LaunchAgent, not a murakumo WASM on-tick — the same call ADR-2607255100
   §4 made for toshokan. This is the honest production path today; the fleet is used for
-  WIDTH, not for the heartbeat: `bb -cp src -m yabai.methods.ct-watch --plan N --live`
+  WIDTH, not for the heartbeat: `kbb -cp src -m yabai.methods.ct-watch --plan N --live`
   emits a task batch for `murakumo task run --tasks`, which fans slices over 132 cores.
 
   StartInterval=3600 — CT logs advance continuously, so an hourly slice is a steady sample

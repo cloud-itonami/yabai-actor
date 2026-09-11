@@ -125,7 +125,7 @@
        (loop [d f, acc []]
          (if (.isAfter d t) acc (recur (.plusDays d 1) (conj acc (str d))))))))
 
-;; data/ dir resolved at load time (bb sets *file*). src/yabai/methods/ -> root is 3 levels up.
+;; data/ dir resolved at load time (kbb -M:sets *file*). src/yabai/methods/ -> root is 3 levels up.
 #?(:clj (def ^:private data-dir
           (let [here (-> *file* clojure.java.io/file .getParentFile)
                 repo-root (.. here getParentFile getParentFile getParentFile)]

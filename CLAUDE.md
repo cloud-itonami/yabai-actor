@@ -63,11 +63,11 @@ AML/sanctions/anti-social forces risk scoring + IP access filtering。
 > ```bash
 > # NOTE: the pipeline is cljc on bb since ADR-2606160842 — the python names below are the
 > # historical ones the ports are 1:1 with, not runnable files.
-> bb -cp src -e "(require '[yabai.methods.ingest :as i])(apply i/-main [\"--source\" \"ct\" \"--domain\" \"example.com\" \"--live\"])"
-> bb -cp src -e "(require '[yabai.methods.phish-infra :as p])(p/-main)"   # score observations → data/*.kotoba.edn
-> bb -cp src -e "(require '[yabai.methods.cf-sweep :as c])(prn (c/rebuild-merged!))"  # fold data/ → merged graph
-> bb -cp src -e "(require '[yabai.methods.analyze :as a])(a/-main)"       # → out/ (encryption audit = PASS)
-> bb -cp src -e "(require '[yabai.methods.autorun :as a])(a/-main \"--cycles\" \"1\")"   # CTI heartbeat
+> kbb -cp src -e "(require '[yabai.methods.ingest :as i])(apply i/-main [\"--source\" \"ct\" \"--domain\" \"example.com\" \"--live\"])"
+> kbb -cp src -e "(require '[yabai.methods.phish-infra :as p])(p/-main)"   # score observations → data/*.kotoba.edn
+> kbb -cp src -e "(require '[yabai.methods.cf-sweep :as c])(prn (c/rebuild-merged!))"  # fold data/ → merged graph
+> kbb -cp src -e "(require '[yabai.methods.analyze :as a])(a/-main)"       # → out/ (encryption audit = PASS)
+> kbb -cp src -e "(require '[yabai.methods.autorun :as a])(a/-main \"--cycles\" \"1\")"   # CTI heartbeat
 > ./run_tests.sh                                                          # all 5 method suites
 > ```
 >

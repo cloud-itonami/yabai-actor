@@ -153,7 +153,7 @@ passphrase を推測も入力もしないため、**オーナーが `rad auth` �
 ### 5. tamaki 側の接続
 
 `loops/yabai-phishing-watch.edn` の objective が
-`bb -cp src -m yabai.methods.maturity` を「上げる対象」として名指す。`-main` は floor 破壊時に
+`kbb -cp src -m yabai.methods.maturity` を「上げる対象」として名指す。`-main` は floor 破壊時に
 **exit 非ゼロ**なので、supervisor / CI が回帰を低スコアではなく失敗として扱える。
 
 ## Verified（2026-07-28）

@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the maturity fitness function (ADR-0005).
-;; Run: bb --classpath src:test test/yabai/methods/test_maturity.cljc
+;; Run: kbb --classpath src:test test/yabai/methods/test_maturity.cljc
 (ns yabai.methods.test-maturity
   "The point of this file is the anti-gaming test.
 
