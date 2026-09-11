@@ -59,7 +59,7 @@ YABAI_OPERATOR_GATE env でなく `--live` flag で gate（cf_sweep と同型）
 ## Verified
 
 ```
-bb -cp src -e \"(require 'yabai.methods.ingest)(apply -main [--source ct --domain etzhayyim.com --live])\"
+kbb -cp src -e \"(require 'yabai.methods.ingest)(apply -main [--source ct --domain etzhayyim.com --live])\"
 → {:source \"ct\", :domain \"etzhayyim.com\", :domains 5, :certs 28,
    :written \"etzhayyim-com-ct.kotoba.edn\"}
 ```

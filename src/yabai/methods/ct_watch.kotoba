@@ -29,7 +29,7 @@
   GATE-G7: live network is operator-gated (`--live`), matching ingest / cf_sweep.
 
   House style: pure fns portable and tested; network + file I/O behind #?(:clj …); HTTP and
-  DNS go through curl / dig subprocesses, the same discipline cf_sweep uses (bb ships no
+  DNS go through curl / dig subprocesses, the same discipline cf_sweep uses (kbb -M:ships no
   JNDI, so `javax.naming` is not available for the Cymru TXT lookup)."
   (:require [kotoba.lang.text :as str]
             [yabai.methods.ingest :as ingest]
@@ -457,7 +457,7 @@
 ;; ── fleet fan-out ───────────────────────────────────────────────────────────
 (def remote-src-dir
   "Where the collector is staged on a fleet node. Not the repo: fleet nodes have no
-  checkout, and the previous `--plan` emitted `cd <local repo-root> && bb -cp src`, a path
+  checkout, and the previous `--plan` emitted `cd <local repo-root> && kbb -cp src`, a path
   that exists on the operator's laptop and nowhere else — which is why that batch had never
   been executed once in the life of this actor. It was a preview of a doomed command."
   "/tmp/yabai-src")
@@ -479,7 +479,7 @@
                     ;; skip the band the resident tick is working through
                     start (+ cur (* per-slice (inc slices-per-log)) (* i per-slice))]]
           {:id (str "ct-" log "-" i)
-           :cmd (str "bb -cp " remote-src-dir " -e "
+           :cmd (str "kbb -cp " remote-src-dir " -e "
                      "\"(require (quote [yabai.methods.ct-watch :as w])) "
                      "(let [u (get w/ct-logs \\\"" log "\\\") "
                      "r (w/collect-names! u " start " " per-slice ")] "
@@ -642,7 +642,7 @@
            (if (:ok r) 0 (System/exit 1)))
 
          ;; System/exit, not a return value: launchd and `tamaki exec` read the exit code,
-         ;; and `bb -m` discards whatever -main returns.
+         ;; and `kbb -m` discards whatever -main returns.
          (not live?)
          (do (println "REFUSED: --live not set (G7 operator gate, offline-default).")
              (System/exit 1))

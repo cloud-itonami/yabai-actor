@@ -1,4 +1,4 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai self-publish — thin wrapper delegating to the SHARED kototama organism runtime.
 (require '[babashka.process :refer [shell]])
 (def root (-> *file* (java.io.File.) .getAbsoluteFile .getParentFile .getParentFile))

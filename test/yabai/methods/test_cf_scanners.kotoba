@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the Cloudflare-zone HTTP-scanner bridge + multi-file graph merge
-;; (ADR-2607170800). Run: bb --classpath methods methods/test_cf_scanners.cljc
+;; (ADR-2607170800). Run: kbb --classpath methods methods/test_cf_scanners.cljc
 (ns yabai.methods.test-cf-scanners
   "Pins the probe-path detector, the :scanner IOC bridge (aggregation, confidence tiering,
   deterministic ordering, shared-egress-agnostic pure core) and merge-many (fold many curated

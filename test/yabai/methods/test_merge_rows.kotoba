@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the seed+bridged threat-intel dedup-merge.
-;; Run:  bb --classpath 20-actors 20-actors/yabai/methods/test_merge_rows.cljc
+;; Run:  kbb --classpath 20-actors 20-actors/yabai/methods/test_merge_rows.cljc
 (ns yabai.methods.test-merge-rows
   "Validation of merge-rows — yabai's seed+bridged dedup-merge for the threat-intel graph. It
   concatenates seed rows then bridged rows and keeps the FIRST seen of each id (so a curated seed

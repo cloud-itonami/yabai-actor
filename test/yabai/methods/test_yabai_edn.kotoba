@@ -1,4 +1,4 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; Clojure test for methods/yabai_edn.cljc — reader + classify + edn serializer.
 ;; (No python test existed for yabai_edn; fresh coverage, parity with yabai_edn.py.)
 (ns yabai.methods.test-yabai-edn

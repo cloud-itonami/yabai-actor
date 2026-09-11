@@ -1,4 +1,4 @@
-#!/usr/bin/env nbb
+#!/usr/bin/env kbb
 ;; run-yabai-ct-watch-tick.cljs — LaunchAgent entry for the worldwide phishing watch.
 ;; One tick of yabai's CT-log supply loop, registered as a tamaki AgentRun:
 ;;   tamaki exec -> ct_watch/-main -> get-entries -> lexical prefilter -> DNS/ASN ->

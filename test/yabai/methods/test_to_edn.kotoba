@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the threat-intel record → EDN-text serializer.
-;; Run:  bb --classpath 20-actors 20-actors/yabai/methods/test_to_edn.cljc
+;; Run:  kbb --classpath 20-actors 20-actors/yabai/methods/test_to_edn.cljc
 (ns yabai.methods.test-to-edn
   "Validation of to-edn — yabai's threat-intel record → EDN-text serializer: it emits the header
   lines, then a `[ … ]` vector holding one ` {k v …}` map per record, with each value formatted by

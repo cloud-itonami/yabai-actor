@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the telephony institution-impersonation scorer (line_infra).
-;; Run: bb --classpath src:test test/yabai/methods/test_line_infra.cljc
+;; Run: kbb --classpath src:test test/yabai/methods/test_line_infra.cljc
 (ns yabai.methods.test-line-infra
   "Pins the two scoring signals and the CALIBRATION between them, the same way
   test_phish_infra does for domains.

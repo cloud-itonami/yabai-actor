@@ -1,6 +1,6 @@
-#!/usr/bin/env bb
+#!/usr/bin/env kbb
 ;; yabai — validation of the CT-log supply collector (ADR-0004).
-;; Run: bb --classpath src:test test/yabai/methods/test_ct_watch.cljc
+;; Run: kbb --classpath src:test test/yabai/methods/test_ct_watch.cljc
 (ns yabai.methods.test-ct-watch
   "Pins the offline-testable half of the CT watch: MerkleTreeLeaf field arithmetic, name
   normalization, the pure prefilter that keeps the firehose off the network, and the slice
@@ -90,7 +90,7 @@
     (is (= ["ct-argon2026h2-0" "ct-argon2026h2-1" "ct-nimbus2026-0" "ct-nimbus2026-1"]
            (mapv :id (:tasks b))))
     (testing "the command targets the staged directory, not the operator's checkout.
-              The previous --plan emitted `cd <local repo-root> && bb -cp src`, which is
+              The previous --plan emitted `cd <local repo-root> && kbb -cp src`, which is
               why it had never once been executed: no fleet node has that path."
       (is (every? #(str/includes? % w/remote-src-dir) cmds))
       (is (not-any? #(str/includes? % "/Users/") cmds)))
