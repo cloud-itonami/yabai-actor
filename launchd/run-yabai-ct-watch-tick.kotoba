@@ -63,9 +63,18 @@
     (println (str "[yabai-ct-watch-tick] DEGRADED: TAMAKI_BIN missing (" tamaki
                   ") — running the tick directly. The observation still lands in git; this"
                   " run will NOT appear in `tamaki status`.")))
+  ;; Mirror freshness: the tick's classpath is .mirror/src (gen-cljk-mirror's .clj
+  ;; symlinks over the .kotoba sources) plus the pinned kotoba-lang/text gitlib.
+  ;; Regenerate when any .kotoba source is newer than the mirror dir — same
+  ;; staleness check bin/tamaki uses for its own overlay.
+  (let [mirror-check (.spawnSync cp "find" #js [root "src" "test" "-name" "*.kotoba" "-newer" (str root "/.mirror")]
+                                 #js {:encoding "utf8"})]
+    (when (pos? (.-length (.trim (str (.-stdout mirror-check)))))
+      (println "[yabai-ct-watch-tick] .mirror stale — regenerating")
+      (.spawnSync cp (str root "/bin/gen-cljk-mirror") #js [] #js {:cwd root :stdio "inherit"})))
   (println (str "[yabai-ct-watch-tick] " (.toISOString (js/Date.))
                 " root=" root " log=" ct-log " entries=" entries))
-  (let [tick #js ["bb" "-cp" "src" "-m" "yabai.methods.ct-watch"
+  (let [tick #js ["/opt/homebrew/bin/bb" "-cp" ".mirror/src:/Users/junkawasaki/.gitlibs/libs/io.github.kotoba-lang/text/73bdb13ae7a3d004b44bca08be03a3191157a38f/src" "-m" "yabai.methods.ct-watch"
                   "--live" "--log" ct-log "--entries" entries "--score" "--commit"]
         [bin argv] (if (tamaki-available?)
                      [tamaki (.concat #js ["exec"
