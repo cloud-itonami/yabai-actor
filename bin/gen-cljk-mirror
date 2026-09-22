@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# gen-cljk-mirror for yabai-actor — mirror .kotoba sources into .mirror as .clj
+# symlinks so the JVM route (real babashka bb / clojure CLI) can require them.
+# Mirrors tamaki/bin/gen-cljk-mirror; .kotoba guests are not Clojure sources
+# and the kbb SCI engine cannot host this repo (clojure.lang.PersistentArrayMap
+# in yabai_edn.kotoba), so the JVM route is the repair, per t_83fad0e7.
+set -eu
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+cd "$ROOT"
+
+OUT=.mirror
+rm -rf "$OUT"
+mkdir -p "$OUT"
+
+total=0
+for SRC in src test; do
+  [ -d "$SRC" ] || continue
+  while IFS= read -r f; do
+    rel=${f#"$SRC"/}
+    base=${rel##*/}
+    stem=${base%.kotoba}
+    sub=${rel%"/$base"}
+    if [ "$sub" = "$rel" ]; then sub=""; fi
+    dir="$OUT/$SRC"
+    [ -n "$sub" ] && dir="$dir/$sub"
+    mkdir -p "$dir"
+    ln -sf "$ROOT/$f" "$dir/$stem.clj"
+    total=$((total + 1))
+  done < <(find "$SRC" -name '*.kotoba' -type f)
+done
+# data/ and repo-root must resolve from .mirror too: the .kotoba sources derive
+# repo-root from *file* as 3 parents up (src/yabai/methods -> src -> ROOT). Under the
+# mirror the path is .mirror/src/yabai/methods/file.clj, so 3 parents up = .mirror —
+# one level short of ROOT. Fake the layout: .mirror/data -> ../data (scores + merged
+# graph land in the REAL data/), and .mirror/.git -> ../.git so `git -C repo-root`
+# (commit-and-push!) runs against the real repo even though repo-root == .mirror.
+# data/ and repo-root must be USABLE from .mirror, and git-safe: git -C .mirror
+# add data/... must stage the tick's file WRITES, not symlinks. A dir-symlink breaks
+# git pathspecs ("beyond a symbolic link"); per-entry symlinks get committed AS
+# symlink blobs (120000) — measured both ways. So data/ is a REAL directory of
+# HARD LINKS (same inode = zero copy cost, writes from either path share content)
+# and repo-root == .mirror works via a .git symlink (git follows it fine).
+rm -rf "$OUT/data"
+mkdir -p "$OUT/data/ingest"
+for e in "$ROOT"/data/*; do
+  b=$(basename "$e")
+  [ "$b" = "ingest" ] && continue
+  if [ -f "$e" ]; then ln -f "$e" "$OUT/data/$b"
+  else cp -R "$e" "$OUT/data/$b"; fi
+done
+for e in "$ROOT"/data/ingest/*; do
+  b=$(basename "$e")
+  [ -f "$e" ] && ln -f "$e" "$OUT/data/ingest/$b"
+done
+[ -e "$OUT/.git" ] || ln -s "../.git" "$OUT/.git"
+echo "mirror: $total link(s) under $OUT" >&2
