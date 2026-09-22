@@ -298,6 +298,7 @@
  {"domain": "lvs-ns-admin.paypalcorp.com", "observed": "2026-07-29"},
  {"domain": "gotochurchonline.com", "observed": "2026-07-30", "ip": "13.248.169.48", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
  {"domain": "devel1-ms-dynamics.pipelinersales.com", "observed": "2026-07-29", "ip": "54.155.0.201", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "esc.integrationaccounts.microsoftazurelogicapps.net", "observed": "2026-09-22"},
  {"domain": "www.perfect-hatsonline.shop", "observed": "2026-07-29", "ip": "199.188.201.155", "asn": 22612, "asn_org": "NAMECHEAP-NET - Namecheap, Inc., US", "asn_country": "US"},
  {"domain": "mhtsapp.com", "observed": "2026-07-30", "ip": "199.233.255.84", "asn": 14415, "asn_org": "HOSTCOLLECTIVE - Host Collective, Inc., US", "asn_country": "US"},
  {"domain": "sgsonline.net.admin-mcas-gov.us", "observed": "2026-07-29", "ip": "52.126.54.167", "asn": 8070, "asn_org": "MICROSOFT-CORP-MSN-AS-BLOCK - Microsoft Corporation, US", "asn_country": "US"},
