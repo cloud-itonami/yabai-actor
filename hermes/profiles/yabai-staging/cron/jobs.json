@@ -7,11 +7,11 @@
       "enabled": true,
       "enabled_toolsets": null,
       "id": "f475a58f04ae",
-      "model": "qwen3.8-27b-whitehacker",
+      "model": "murakumo/free",
       "name": "yabai-staging-fetch",
       "no_agent": false,
       "prompt": "yabai-staging 反復: script stdout を読み、staging 結果 (staged か SILENT か REFUSED か) を報告するだけ。raw の中身を wiki に書かない。REFUSED なら理由をそのまま報告して停止。datasets は urlhaus-full / spamhaus-drop-full / openphish のみ。SOUL.md 準拠。",
-      "provider": "kotoba",
+      "provider": "murakumo",
       "schedule": {
         "kind": "cron",
         "expr": "40 16 * * *",

@@ -7,11 +7,11 @@
       "enabled": true,
       "enabled_toolsets": null,
       "id": "b04249d974c2",
-      "model": "qwen3.8-27b-whitehacker",
+      "model": "murakumo/free",
       "name": "yabai-ops-tick",
       "no_agent": false,
       "prompt": "yabai-ops 反復: script stdout の健康レポートを読み、赤を 1 つだけ直す (1 反復 1 修正)。cron failed/unknown、throttle 超過、VERIFY-FAIL、orphan chunk、missing state file の優先順。直せないものは正直に報告。SOUL.md 準拠。",
-      "provider": "kotoba",
+      "provider": "murakumo",
       "schedule": {
         "kind": "cron",
         "expr": "31 */6 * * *",
