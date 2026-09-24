@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "id": "f475a58f04ae",
+      "model": "qwen3.8-27b-whitehacker",
+      "name": "yabai-staging-fetch",
+      "no_agent": false,
+      "prompt": "yabai-staging 反復: script stdout を読み、staging 結果 (staged か SILENT か REFUSED か) を報告するだけ。raw の中身を wiki に書かない。REFUSED なら理由をそのまま報告して停止。datasets は urlhaus-full / spamhaus-drop-full / openphish のみ。SOUL.md 準拠。",
+      "provider": "kotoba",
+      "schedule": {
+        "kind": "cron",
+        "expr": "40 16 * * *",
+        "display": "40 16 * * *"
+      },
+      "script": "staging_fetch.py",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    }
+  ]
+}

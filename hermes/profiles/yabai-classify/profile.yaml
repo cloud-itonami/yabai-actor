@@ -1,0 +1,3 @@
+description: yabai-classify — R2 staging の chunk を 1 つ/回 claim して admission → candidate
+  facts にする分類 bot。fetch はしない。
+description_auto: false

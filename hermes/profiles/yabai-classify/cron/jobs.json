@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "id": "35ccd51c7119",
+      "model": "qwen3.8-27b-whitehacker",
+      "name": "yabai-classify-tick",
+      "no_agent": false,
+      "prompt": "yabai-classify 反復: script stdout の claimed 行を読み、staging chunk を dataset 別 parser (urlhaus CSV / drop JSONL / openphish text) で IOC candidate facts にし、PR または wiki 記録に routing する。1 chunk/run。admission bypass 禁止、個人データ禁止 (SOUL.md)。SILENT なら停止。",
+      "provider": "kotoba",
+      "schedule": {
+        "kind": "cron",
+        "expr": "25 0 * * *",
+        "display": "25 0 * * *"
+      },
+      "script": "classify_chunk.py",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    }
+  ]
+}

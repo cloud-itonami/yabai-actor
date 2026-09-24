@@ -1,0 +1,48 @@
+{
+  "jobs": [
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "id": "4344d48e1c7d",
+      "model": "qwen3.8-27b-whitehacker",
+      "name": "yabai-intel-feed-scout",
+      "no_agent": false,
+      "prompt": "yabai-intel 反復: script stdout の feed 状態を読み、CHANGED feed の新規 IOC エントリを wiki.yataverse.com 迷惑インフラセクションに出典付きで記録する (1〜3件)。SOUL.md の絶対ルール (IOC のみ・個人情報禁止・出典必須) に従え。THROTTLED なら何もせず停止。",
+      "provider": "kotoba",
+      "schedule": {
+        "kind": "cron",
+        "expr": "55 18 * * *",
+        "display": "55 18 * * *"
+      },
+      "script": "yabai_intel_evidence.py",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    },
+    {
+      "base_url": null,
+      "context_from": null,
+      "deliver": "local",
+      "enabled": true,
+      "enabled_toolsets": null,
+      "id": "5fe0cd4c32fe",
+      "model": "qwen3.8-27b-whitehacker",
+      "name": "yabai-intel-rdap-timeline",
+      "no_agent": false,
+      "prompt": "yabai-intel RDAP/whois 時系列反復: script stdout の rdap 行を読み、CHANGED ドメインがあれば wiki の運営会社ページに観測日時付きで記録する。first-observation は台帳確認のみ。PII (fn=(個人登録のため非掲載)) は絶対に書かない。SOUL.md ルール準拠。",
+      "provider": "kotoba",
+      "schedule": {
+        "kind": "cron",
+        "expr": "20 2 * * *",
+        "display": "20 2 * * *"
+      },
+      "script": "rdap_timeline.py",
+      "skill": null,
+      "skills": [],
+      "workdir": null
+    }
+  ]
+}
