@@ -1877,6 +1877,7 @@
  {"domain": "llmo-tsuyoshi-kashiwazaki-onlinepathforce.xyz", "observed": "2026-07-29"},
  {"domain": "www.amazon-list.ph", "observed": "2026-07-29", "ip": "45.79.222.138", "asn": 63949, "asn_org": "AKAMAI-LINODE-AP - Akamai Connected Cloud, SG", "asn_country": "US"},
  {"domain": "www.botanicallyinclined.com", "observed": "2026-07-29", "ip": "76.223.105.230", "asn": 16509, "asn_org": "AMAZON-02 - Amazon.com, Inc., US", "asn_country": "US"},
+ {"domain": "kaufendrogenonline.com", "observed": "2026-09-25", "ip": "148.66.157.235", "asn": 26496, "asn_org": "AS-26496-GO-DADDY-COM-LLC - GoDaddy.com, LLC, US", "asn_country": "SG"},
  {"domain": "oneflix.stream", "observed": "2026-09-24", "ip": "172.67.207.30", "asn": 13335, "asn_org": "CLOUDFLARENET - Cloudflare, Inc., US", "asn_country": "US"},
  {"domain": "apple.med-lem.shop", "observed": "2026-09-23", "ip": "220.158.233.4", "asn": 38623, "asn_org": "VIETTELCAMBODIA-AS-AP - ISP/IXP IN CAMBODIA WITH THE BEST VERVICE IN THERE., KH", "asn_country": "KH"},
  {"domain": "www.paulinestockman.com", "observed": "2026-07-29", "ip": "213.186.33.40", "asn": 16276, "asn_org": "OVH - OVH SAS, FR", "asn_country": "FR"},
