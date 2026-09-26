@@ -1,0 +1,8 @@
+{:paths ["src"]
+ ;; kbb resolves no Maven/git coordinates out of deps.edn (bin/kbb_deps.cljk
+ ;; walks :local/root only) — the git coord this repo's deps.edn pins must be
+ ;; restated here for the engine as a local sibling checkout (same pattern as
+ ;; tamaki/nbb.edn, which restates its git pins verbatim). Pin is copied
+ ;; verbatim from deps.edn; bump both together.
+ :deps {io.github.kotoba-lang/text
+        {:local/root "/Users/junkawasaki/github/com-junkawasaki/orgs/kotoba-lang/text"}}}
