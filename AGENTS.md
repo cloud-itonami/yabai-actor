@@ -97,7 +97,7 @@ AML/sanctions/anti-social forces risk scoring + IP access filtering。
 > `:access/*` record stored `:cti.attr/encrypted true` + only the envelope CID — **no plaintext
 > PII** in the log; `transact.py` refuses to write if any access record is plaintext. Also: an
 > operator-gated crt.sh pull parsed 27 real certs as `:authoritative`. Node recipe = the
-> `kotoba-server` binary built `--features wasm-runtime` + operator-JWT auth (see ipaddress CLAUDE.md).
+> `kotoba-server` binary built `--features wasm-runtime` + operator-JWT auth (see ipaddress AGENTS.md).
 >
 > **Separation of duties unchanged**: yabai SCORES risk; the Council authorizes enforcement;
 > tadori holds case-anchored evidence. Defensive CTI only — no adherent de-anon, no mass
