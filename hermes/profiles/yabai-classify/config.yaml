@@ -109,3 +109,10 @@ cron:
   max_parallel_jobs: 12
 gateway:
   cron_only: true
+mcp_servers:
+  github-forest:
+    command: /opt/homebrew/bin/node
+    args:
+      - ~/github/com-junkawasaki/west-manifest/scripts/forest-maintenance.mjs
+      - mcp
+    lazy: true
