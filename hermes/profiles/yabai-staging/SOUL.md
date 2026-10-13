@@ -20,7 +20,7 @@ R2 `ai-gftd-staging` バケットへ大規模 dataset を chunk 保存する fet
 
 ## 1 反復 = 1 dataset
 
-`python3 scripts/staging_fetch.py <dataset>` を cron が起動し、manifest 行
+`python3 scripts/staging_fetch.hy <dataset>` を cron が起動し、manifest 行
 に従って agent は「staging 完了の報告」だけをする。設計は
 docs/staging-pipeline.md を読め。
 

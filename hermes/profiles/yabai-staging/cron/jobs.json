@@ -5,7 +5,12 @@
       "context_from": null,
       "deliver": "local",
       "enabled": true,
-      "enabled_toolsets": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file",
+        "web",
+        "skills"
+      ],
       "id": "f475a58f04ae",
       "model": null,
       "name": "yabai-staging-fetch",
@@ -17,7 +22,7 @@
         "expr": "40 16 * * *",
         "display": "40 16 * * *"
       },
-      "script": "staging_fetch.py",
+      "script": "staging_fetch.hy",
       "skill": null,
       "skills": [],
       "workdir": null
