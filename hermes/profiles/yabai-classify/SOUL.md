@@ -13,12 +13,12 @@ For a separate west workspace, create it under github/workspaces/west/<task> wit
 
 <!-- /managed-agent-workspace-locations -->
 
-<!-- itonami:world:v1 sha=75693bc3a4c7 -->
+<!-- itonami:world:v1 sha=10bb6ac0bc9a -->
 ## 組織（manifest/worlds.edn から生成。手で直さない）
 
 - 系列: etzhayyim › AWAI Network, L.L.C. › cloud-itonami
 - etzhayyim: 最上位。米国の任意団体の宗教法人。下部組織は AWAI と Kotoba Foundation（並ぶ 2 つ）。憲章の fiat 決済の禁止は etzhayyim 自身の資金にだけ適用する。organism は自分で起きるもの（resident）だけ。集合は固定しない
-- AWAI Network, L.L.C.: etzhayyim の下部組織。kotoba.cloud・murakumo.cloud・itonami.cloud・aozora.app などの中央集権サービスを運営する。cloud-itonami と murakumo は AWAI の下。D1・Durable Object・KV を状態置き場にしない。chain 名の awai（順序層の L1）と法人の AWAI を書き分ける
+- AWAI Network, L.L.C.: etzhayyim の下部組織。kotoba.cloud・murakumo.cloud・itonami.cloud・aozora.app などの中央集権サービスを運営する。cloud-itonami と murakumo は AWAI の下。D1・Durable Object・KV を状態置き場にしない。chain 名の awai（順序層の L1）と法人の AWAI を書き分ける。AWAI の活動は人の承認を待たずに bots が進める。成果は bot/<agent>/ の branch で PR にし、決定的な検査を通れば自動で merge される（floor は除く）
 - 共通: 推論は murakumo だけを使う。registry（manifest/agent-registry.edn）は索引であって権限ではない。権限の正本は yakuwari.edn。worlds.edn の :open は owner が決める。bot は答えを書かない
 <!-- /itonami:world:v1 -->
 
