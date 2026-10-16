@@ -5,7 +5,12 @@
       "context_from": null,
       "deliver": "local",
       "enabled": true,
-      "enabled_toolsets": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file",
+        "web",
+        "skills"
+      ],
       "id": "35ccd51c7119",
       "model": "mishima",
       "name": "yabai-classify-tick",
@@ -17,7 +22,7 @@
         "expr": "25 0 * * *",
         "display": "25 0 * * *"
       },
-      "script": "classify_chunk.py",
+      "script": "classify_chunk.hy",
       "skill": null,
       "skills": [],
       "workdir": null

@@ -44,7 +44,7 @@ R2 `ai-gftd-staging` から 1 run につき **1 chunk** を claim して
 
 ## 1 反復 = 1 chunk
 
-`python3 scripts/classify_chunk.py` を cron が起動。chunk がローカル
+`python3 scripts/classify_chunk.hy` を cron が起動。chunk がローカル
 (state/current_chunk.bin) に落ちるので、それを dataset に応じた
 deterministic parser にかけ、hyakka.corpus.ioc 形の candidate facts を
 出し、routing する。

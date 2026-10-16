@@ -5,7 +5,12 @@
       "context_from": null,
       "deliver": "local",
       "enabled": true,
-      "enabled_toolsets": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file",
+        "web",
+        "skills"
+      ],
       "id": "4344d48e1c7d",
       "model": "mishima",
       "name": "yabai-intel-feed-scout",
@@ -17,7 +22,7 @@
         "expr": "55 18 * * *",
         "display": "55 18 * * *"
       },
-      "script": "yabai_intel_evidence.py",
+      "script": "yabai_intel_evidence.hy",
       "skill": null,
       "skills": [],
       "workdir": null
@@ -27,7 +32,12 @@
       "context_from": null,
       "deliver": "local",
       "enabled": true,
-      "enabled_toolsets": null,
+      "enabled_toolsets": [
+        "terminal",
+        "file",
+        "web",
+        "skills"
+      ],
       "id": "5fe0cd4c32fe",
       "model": "mishima",
       "name": "yabai-intel-rdap-timeline",
@@ -39,7 +49,7 @@
         "expr": "20 2 * * *",
         "display": "20 2 * * *"
       },
-      "script": "rdap_timeline.py",
+      "script": "rdap_timeline.hy",
       "skill": null,
       "skills": [],
       "workdir": null

@@ -1,0 +1,7 @@
+;; Kotoba owns the agent and cron scheduler for this profile after adoption.
+{:profile/id "yabai-staging"
+ :profile/hermes-compatible true
+ :runtime {:engine :itonami-agent
+           :scheduler :itonami}
+ :itonami/schema "cloud.itonami.profile.v1"
+ :cron? true}
