@@ -3,7 +3,8 @@ model:
   provider: murakumo
   base_url: https://api.murakumo.cloud/v1
   default: mishima
-  max_tokens: 8192
+  key_env: CUSTOM_PROVIDER_MURAKUMO_KEY
+  max_tokens: 1024
   context_length: 131072
 fallback_providers: []
 plugins:
